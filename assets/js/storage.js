@@ -1,0 +1,135 @@
+// ================================
+// SCHOOL DATA
+// ================================
+const SCHOOLS = [
+    {
+        id: 1,
+        name: "AGAPE KAINUK",
+        nemis: "XGWH",
+        county: "Turkana",
+        subCounty: "AROO",
+        zone: "KAINUK",
+        type: "PUBLIC",
+        status: "Scheduled",
+        statusDetail: "Scheduled(UNICEF)",
+        lat: 1.780,
+        lng: 35.508
+    },
+    {
+        id: 2,
+        name: "KAINUK GIRLS",
+        nemis: "7UT7",
+        county: "Turkana",
+        subCounty: "AROO",
+        zone: "KAINUK",
+        type: "PUBLIC",
+        status: "Scheduled",
+        statusDetail: "Scheduled(UNICEF)",
+        lat: 35.498,
+        lng: 1.779
+    },
+    {
+        id: 3,
+        name: "LODWAR MIXED JSS",
+        nemis: "3YTT",
+        county: "Turkana",
+        subCounty: "TURKANA CENTRAL",
+        zone: "Kawalase",
+        type: "PUBLIC",
+        status: "Connected",
+        statusDetail: "EARTTDFP",
+        lat: 3.118,
+        lng: 35.611
+    },
+    {
+        id: 4,
+        name: "BISHOP MAHON JSS",
+        nemis: "YNAZ",
+        county: "Turkana",
+        subCounty: "TURKANA CENTRAL",
+        zone: "Kawalase",
+        type: "PUBLIC",
+        status: "Connected",
+        statusDetail: "EARTTDFP",
+        lat: 3.130,
+        lng: 35.59
+    },
+    {
+        id: 5,
+        name: "KAPUTIR",
+        nemis: "SBEK",
+        county: "Turkana",
+        subCounty: "AROO",
+        zone: "KAINUK",
+        type: "PUBLIC",
+        status: "Not Connected",
+        statusDetail: "ProposedUsingISPs",
+        lat: 35.453,
+        lng: 2.076
+    },
+    {
+        id: 6,
+        name: "LOROGON",
+        nemis: "VAXE",
+        county: "Turkana",
+        subCounty: "AROO",
+        zone: "KAINUK",
+        type: "PUBLIC",
+        status: "Not Connected",
+        statusDetail: "ProposedUsingISPs",
+        lat: 35.359,
+        lng: 1.936
+    },
+    {
+        id: 7,
+        name: "KIBISH",
+        nemis: "RUT4",
+        county: "Turkana",
+        subCounty: "KIBISH",
+        zone: "Kibish",
+        type: "PUBLIC",
+        status: "Not Connected",
+        statusDetail: "ProposedUsing_LEO(Rural)",
+        lat: 35.822,
+        lng: 5.289
+    },
+    {
+        id: 8,
+        name: "LORUGUM JSS",
+        nemis: "37T4",
+        county: "Turkana",
+        subCounty: "LOIMA",
+        zone: "Lorugum",
+        type: "PUBLIC",
+        status: "Not Connected",
+        statusDetail: "ProposedUsingISPs",
+        lat: 35.266,
+        lng: 2.896
+    },
+    {
+        id: 9,
+        name: "TURKANA GIRLS JSS",
+        nemis: "5DJK",
+        county: "Turkana",
+        subCounty: "LOIMA",
+        zone: "Turkwel",
+        type: "PUBLIC",
+        status: "Not Connected",
+        statusDetail: "ProposedUsingISPs",
+        lat: 35.407,
+        lng: 2.916
+    },
+    {
+        id: 10,
+        name: "COMBONI GIRLS JSS",
+        nemis: "JUZC",
+        county: "Turkana",
+        subCounty: "TURKANA CENTRAL",
+        zone: "Kawalase",
+        type: "PUBLIC",
+        status: "Connected",
+        statusDetail: "Planned under DSH II",
+        lat: 3.120,
+        lng: 35.559
+    }
+];
