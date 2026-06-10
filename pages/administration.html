@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SchoolNET | Administration</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../assets/css/admin.css">
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <h1>🌐 SchoolNET</h1>
+            <p>Connectivity Management</p>
+        </div>
+        <nav>
+            <a href="../index.html" class="nav-link">
+                📊 Dashboard
+            </a>
+            <a href="school-registry.html" class="nav-link">
+                🏫 School Registry
+            </a>
+            <a href="gis-mapping.html" class="nav-link">
+                🗺️ GIS Mapping
+            </a>
+            <a href="reports.html" class="nav-link">
+                📄 Reports
+            </a>
+            <a href="administration.html" class="nav-link active">
+                👤 Administration
+            </a>
+            <a href="../login.html" class="nav-link logout">
+                🚪 Logout
+            </a>
+        </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+
+        <!-- TOP BAR -->
+        <header class="topbar">
+            <h2>Administration</h2>
+            <div class="topbar-right">
+                <span>North Rift Region</span>
+                <div class="user-badge">AD</div>
+            </div>
+        </header>
+
+        <!-- PAGE CONTENT -->
+        <div class="page-content">
+
+            <div class="admin-grid">
+
+                <!-- USER MANAGEMENT -->
+                <div class="admin-card">
+                    <h3>👤 User Management</h3>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTable"></tbody>
+                    </table>
+                    <button
+                        class="btn-add-user"
+                        onclick="openUserModal()">
+                        + Add User
+                    </button>
+                </div>
+
+                <!-- ROLES -->
+                <div class="admin-card">
+                    <h3>🔒 Roles & Permissions</h3>
+                    <div class="roles-list">
+                        <div class="role-item">
+                            <div class="role-name">Super Admin</div>
+                            <div class="role-perms">
+                                Full access to everything
+                            </div>
+                        </div>
+                        <div class="role-item">
+                            <div class="role-name">Editor</div>
+                            <div class="role-perms">
+                                Add and edit schools
+                            </div>
+                        </div>
+                        <div class="role-item">
+                            <div class="role-name">Viewer</div>
+                            <div class="role-perms">
+                                Read only access
+                            </div>
+                        </div>
+                        <div class="role-item">
+                            <div class="role-name">Field Agent</div>
+                            <div class="role-perms">
+                                Update connectivity status
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AUDIT LOG -->
+                <div class="admin-card">
+                    <h3>📋 Audit Log</h3>
+                    <div class="audit-list" id="auditLog"></div>
+                </div>
+
+                <!-- SYSTEM INFO -->
+                <div class="admin-card">
+                    <h3>⚙️ System Information</h3>
+                    <div class="info-row">
+                        <span class="info-label">Version</span>
+                        <span class="info-value">1.0.0</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Total Records</span>
+                        <span class="info-value" id="sysTotal">0</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Region</span>
+                        <span class="info-value">North Rift</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Counties</span>
+                        <span class="info-value" id="sysCounties">0</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Connected</span>
+                        <span class="info-value" id="sysConnected">0</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Last Updated</span>
+                        <span class="info-value">June 2026</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD USER MODAL -->
+    <div class="modal-bg" id="userModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Add New User</h3>
+                <button onclick="closeUserModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group full">
+                        <label>Full Name</label>
+                        <input type="text" id="uName"
+                        placeholder="e.g. John Doe">
+                    </div>
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="uUsername"
+                        placeholder="e.g. johndoe">
+                    </div>
+                    <div class="form-group">
+                        <label>Role</label>
+                        <select id="uRole">
+                            <option>Super Admin</option>
+                            <option>Editor</option>
+                            <option>Viewer</option>
+                            <option>Field Agent</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="uPassword"
+                        placeholder="Enter password">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="uStatus">
+                            <option>Active</option>
+                            <option>Inactive</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel"
+                onclick="closeUserModal()">Cancel</button>
+                <button class="btn-save"
+                onclick="saveUser()">Save User</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/storage.js"></script>
+    <script src="../assets/js/admin.js"></script>
+
+</body>
+</html>
