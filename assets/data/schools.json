@@ -1,0 +1,15 @@
+{
+  "region": "North Rift",
+  "description": "JSS Connectivity data for North Rift Region",
+  "counties": [
+    "Turkana",
+    "West Pokot",
+    "Trans Nzoia",
+    "Uasin Gishu",
+    "Elgeyo Marakwet",
+    "Nandi",
+    "Baringo"
+  ],
+  "total": 1457,
+  "note": "Full data is loaded from assets/js/storage.js"
+}
