@@ -1,5 +1,5 @@
 // ================================
-// APP JS — Runs on every page
+// APP JS
 // ================================
 
 // Check login
@@ -20,6 +20,7 @@ function doLogout() {
 
 // Show page
 function showPage(p) {
+
     // Hide all pages
     document.querySelectorAll('.page').forEach(function(el) {
         el.classList.remove('active');
@@ -34,16 +35,15 @@ function showPage(p) {
     const page = document.getElementById('page-' + p);
     if (page) page.classList.add('active');
 
-    // Set active nav
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach(function(link) {
-        if (link.getAttribute('onclick') &&
-            link.getAttribute('onclick').includes(p)) {
+    // Set active nav link
+    document.querySelectorAll('.nav-link').forEach(function(link) {
+        const oc = link.getAttribute('onclick') || '';
+        if (oc.includes("'" + p + "'")) {
             link.classList.add('active');
         }
     });
 
-    // Update page title
+    // Update topbar title
     const titles = {
         dashboard: 'Dashboard',
         registry:  'School Registry',
@@ -53,27 +53,36 @@ function showPage(p) {
         admin:     'Administration'
     };
     const titleEl = document.getElementById('pageTitle');
-    if (titleEl) titleEl.textContent = titles[p] || p;
+    if (titleEl) {
+        titleEl.textContent = titles[p] || p;
+    }
 
-    // Init map when opened
-    if (p === 'map') setTimeout(initMap, 100);
+    // Init map when map page is opened
+    if (p === 'map') {
+        setTimeout(initMap, 200);
+    }
 }
 
 // Toast notification
 function toast(msg) {
     const t = document.getElementById('toast');
+    if (!t) return;
     t.textContent = msg;
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// Set user badge
+// Set user badge initials
 function setUserBadge() {
     const username = sessionStorage.getItem('username') || 'AD';
     const badge = document.getElementById('userBadge');
-    if (badge) badge.textContent = username.substring(0, 2).toUpperCase();
+    if (badge) {
+        badge.textContent = username
+            .substring(0, 2)
+            .toUpperCase();
+    }
 }
 
-// Run on load
+// Run on every page load
 checkAuth();
 setUserBadge();

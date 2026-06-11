@@ -27,6 +27,7 @@ function doLogin() {
         sessionStorage.setItem('loggedIn', 'true');
         sessionStorage.setItem('username', user.username);
         sessionStorage.setItem('role', user.role);
+        // Go to dashboard
         window.location.href = 'pages/dashboard.html';
     } else {
         err.textContent = 'Wrong username or password';
