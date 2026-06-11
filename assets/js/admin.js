@@ -1,10 +1,7 @@
 // ================================
-// ADMINISTRATION PAGE
+// ADMIN JS
 // ================================
 
-// ================================
-// USERS DATA
-// ================================
 let USERS = [
     {
         id: 1,
@@ -29,9 +26,6 @@ let USERS = [
     }
 ];
 
-// ================================
-// AUDIT LOG DATA
-// ================================
 const AUDIT_LOGS = [
     {
         action: 'Admin imported 1,457 school records',
@@ -56,69 +50,75 @@ const AUDIT_LOGS = [
 ];
 
 // ================================
-// RENDER USERS TABLE
+// RENDER ADMIN
 // ================================
-function renderUsers() {
-    const tbody = document.getElementById('usersTable');
-    tbody.innerHTML = '';
+function renderAdmin() {
 
-    USERS.forEach(function(user) {
-
-        const statusColor = user.status === 'Active'
-            ? 'badge-connected'
-            : 'badge-unknown';
-
-        tbody.innerHTML += `
+    // Users Table
+    document.getElementById('usersTable').innerHTML =
+        USERS.map(u => `
             <tr>
-                <td><strong>${user.name}</strong></td>
-                <td>${user.role}</td>
-                <td>
-                    <span class="badge ${statusColor}">
-                        ${user.status}
+                <td style="padding:7px 4px">
+                    <strong>${u.name}</strong>
+                </td>
+                <td style="padding:7px 4px">${u.role}</td>
+                <td style="padding:7px 4px">
+                    <span class="badge
+                    badge-${u.status === 'Active' ?
+                    'connected' : 'unknown'}">
+                        ${u.status}
                     </span>
                 </td>
-                <td>
-                    <button class="btn-remove"
-                    onclick="removeUser(${user.id})">
-                        Remove
-                    </button>
-                </td>
             </tr>
-        `;
-    });
-}
+        `).join('');
 
-// ================================
-// RENDER AUDIT LOG
-// ================================
-function renderAuditLog() {
-    const list = document.getElementById('auditLog');
-    list.innerHTML = '';
-
-    AUDIT_LOGS.forEach(function(log) {
-        list.innerHTML += `
+    // Audit Log
+    document.getElementById('auditLog').innerHTML =
+        AUDIT_LOGS.map(l => `
             <div class="audit-item">
-                ${log.action}
-                <div class="audit-time">${log.time}</div>
+                ${l.action}
+                <div class="audit-time">${l.time}</div>
             </div>
-        `;
-    });
+        `).join('');
+
+    // System Info
+    document.getElementById('sysInfo').innerHTML = `
+        <div class="info-row">
+            <span class="lbl">Version</span>
+            <span class="val">1.0.0</span>
+        </div>
+        <div class="info-row">
+            <span class="lbl">Total Records</span>
+            <span class="val">
+                ${SCHOOLS.length.toLocaleString()}
+            </span>
+        </div>
+        <div class="info-row">
+            <span class="lbl">Region</span>
+            <span class="val">North Rift</span>
+        </div>
+        <div class="info-row">
+            <span class="lbl">Counties</span>
+            <span class="val">
+                ${[...new Set(SCHOOLS.map(s => s.county))].length}
+            </span>
+        </div>
+        <div class="info-row">
+            <span class="lbl">Connected</span>
+            <span class="val">
+                ${SCHOOLS.filter(s =>
+                    s.status === 'Connected').length}
+            </span>
+        </div>
+        <div class="info-row">
+            <span class="lbl">Last Updated</span>
+            <span class="val">June 2026</span>
+        </div>
+    `;
 }
 
 // ================================
-// RENDER SYSTEM INFO
-// ================================
-function renderSystemInfo() {
-    document.getElementById('sysTotal').textContent =
-        SCHOOLS.length;
-    document.getElementById('sysCounties').textContent =
-        [...new Set(SCHOOLS.map(s => s.county))].length;
-    document.getElementById('sysConnected').textContent =
-        SCHOOLS.filter(s => s.status === 'Connected').length;
-}
-
-// ================================
-// OPEN USER MODAL
+// USER MODAL
 // ================================
 function openUserModal() {
     document.getElementById('uName').value = '';
@@ -127,70 +127,37 @@ function openUserModal() {
     document.getElementById('userModal').classList.add('open');
 }
 
-// ================================
-// CLOSE USER MODAL
-// ================================
 function closeUserModal() {
     document.getElementById('userModal').classList.remove('open');
 }
 
-// ================================
-// SAVE USER
-// ================================
 function saveUser() {
     const name = document.getElementById('uName').value.trim();
     const username = document.getElementById('uUsername')
         .value.trim();
 
-    if(!name || !username) {
-        alert('Name and username are required');
+    if (!name || !username) {
+        toast('Name and username are required');
         return;
     }
 
-    const newUser = {
+    USERS.push({
         id: USERS.length + 1,
         name: name,
         username: username,
         role: document.getElementById('uRole').value,
         status: document.getElementById('uStatus').value
-    };
+    });
 
-    USERS.push(newUser);
-
-    // Add to audit log
     AUDIT_LOGS.unshift({
         action: `New user added: ${name}`,
         time: new Date().toLocaleString()
     });
 
     closeUserModal();
-    renderUsers();
-    renderAuditLog();
-    alert('User added successfully!');
+    renderAdmin();
+    toast('User added successfully!');
 }
 
-// ================================
-// REMOVE USER
-// ================================
-function removeUser(id) {
-    if(!confirm('Remove this user?')) return;
-
-    const user = USERS.find(u => u.id === id);
-    USERS = USERS.filter(u => u.id !== id);
-
-    // Add to audit log
-    AUDIT_LOGS.unshift({
-        action: `User removed: ${user.name}`,
-        time: new Date().toLocaleString()
-    });
-
-    renderUsers();
-    renderAuditLog();
-}
-
-// ================================
-// START
-// ================================
-renderUsers();
-renderAuditLog();
-renderSystemInfo();
+// Run on load
+renderAdmin();
