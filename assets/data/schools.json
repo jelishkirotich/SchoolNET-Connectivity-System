@@ -1,6 +1,6 @@
 {
   "region": "North Rift",
-  "description": "JSS Connectivity data for North Rift Region",
+  "description": "JSS Connectivity Planning Data",
   "counties": [
     "Turkana",
     "West Pokot",
@@ -10,6 +10,9 @@
     "Nandi",
     "Baringo"
   ],
-  "total": 1457,
-  "note": "Full data is loaded from assets/js/storage.js"
+  "total_schools": 1457,
+  "connected": 7,
+  "scheduled": 31,
+  "not_connected": 1379,
+  "note": "Full school data is in assets/js/storage.js"
 }

@@ -1,41 +1,35 @@
 # 🌐 SchoolNET Connectivity Management System
 
-A web-based management system for tracking and monitoring 
-internet connectivity status of Junior Secondary Schools 
-in the North Rift Region of Kenya.
+A web-based system for tracking internet connectivity 
+of Junior Secondary Schools in North Rift Region, Kenya.
+
+## 🚀 Live Demo
+https://jelishkirotich.github.io/SchoolNET-Connectivity-System
 
 ## 📋 Features
+- Dashboard with connectivity statistics
+- School Registry — 1,457 schools
+- GIS Mapping with Leaflet
+- Reports and CSV export
+- Administration and user management
 
-- **Dashboard** — Overview of connectivity statistics
-- **School Registry** — Add, edit, delete and search schools
-- **GIS Mapping** — Interactive map showing school locations
-- **Reports** — County analytics and CSV export
-- **Administration** — User management and audit logs
+## 🗺️ Counties Covered
+- Turkana (117 schools)
+- West Pokot (218 schools)
+- Trans Nzoia (178 schools)
+- Uasin Gishu (215 schools)
+- Elgeyo Marakwet (176 schools)
+- Nandi (302 schools)
+- Baringo (251 schools)
 
-## 🗺️ Region Coverage
+## 🔑 Login
+- Username: admin
+- Password: admin123
 
-- Turkana County
-- West Pokot County
-- Trans Nzoia County
-- Uasin Gishu County
-- Elgeyo Marakwet County
-- Nandi County
-- Baringo County
-
-## 🚀 How to Run
-
-1. Clone the repository
-2. Open `login.html` in your browser
-3. Login with username: `admin` password: `admin123`
-
-## 🛠️ Technologies Used
-
-- HTML5
-- CSS3
-- JavaScript
+## 🛠️ Technologies
+- HTML5, CSS3, JavaScript
 - Leaflet.js for GIS mapping
 - Git and GitHub
 
 ## 👤 Author
-
 jelishkirotich

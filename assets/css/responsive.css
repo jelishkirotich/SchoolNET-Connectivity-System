@@ -1,0 +1,98 @@
+/* ================================
+   RESPONSIVE CSS
+   Makes website work on all screens
+================================ */
+
+/* TABLET — screens smaller than 1024px */
+@media (max-width: 1024px) {
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .charts-row {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+/* MOBILE — screens smaller than 768px */
+@media (max-width: 768px) {
+
+    /* Hide sidebar on mobile */
+    .sidebar {
+        display: none;
+    }
+
+    /* Full width main content */
+    .main-content {
+        margin-left: 0;
+    }
+
+    /* Stack stat cards */
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    /* Stack admin grid */
+    .admin-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Stack toolbar */
+    .toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .toolbar-right {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .toolbar-right input {
+        width: 100%;
+    }
+
+    /* Topbar */
+    .topbar h2 {
+        font-size: 14px;
+    }
+
+    /* Map height */
+    #mapContainer {
+        height: 350px;
+    }
+
+    /* Table scroll */
+    .table-wrap {
+        overflow-x: auto;
+    }
+
+    /* Modal full width */
+    .modal {
+        width: 95vw;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+/* SMALL MOBILE — screens smaller than 480px */
+@media (max-width: 480px) {
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .page-content {
+        padding: 16px;
+    }
+
+    .topbar {
+        padding: 0 16px;
+    }
+
+}
