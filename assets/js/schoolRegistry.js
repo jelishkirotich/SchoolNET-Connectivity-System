@@ -1,20 +1,43 @@
 // ================================
-// SCHOOL REGISTRY JS
+// SCHOOL REGISTRY — Connected to Flask
 // ================================
 
 let editId = null;
 let currentPage = 1;
 const PAGE_SIZE = 25;
-let filteredSchools = [...SCHOOLS];
+let allSchools = [];
+let filteredSchools = [];
 
-// Populate county dropdown
-const counties = [...new Set(SCHOOLS.map(s => s.county))].sort();
-const filterCountyEl = document.getElementById('filterCounty');
-counties.forEach(function(c) {
-    const o = document.createElement('option');
-    o.value = o.textContent = c;
-    filterCountyEl.appendChild(o);
-});
+// ================================
+// LOAD SCHOOLS FROM FLASK
+// ================================
+async function loadSchools() {
+    document.getElementById('registryBody').innerHTML = `
+        <tr>
+            <td colspan="10" style="text-align:center;
+            padding:40px;color:var(--text-muted)">
+                Loading schools from database...
+            </td>
+        </tr>
+    `;
+
+    allSchools = await fetchSchools();
+    filteredSchools = [...allSchools];
+
+    // Populate county dropdown
+    const counties = [
+        ...new Set(allSchools.map(s => s.county))
+    ].sort();
+    const sel = document.getElementById('filterCounty');
+    sel.innerHTML = '<option value="">All Counties</option>';
+    counties.forEach(function(c) {
+        const o = document.createElement('option');
+        o.value = o.textContent = c;
+        sel.appendChild(o);
+    });
+
+    renderRegistry();
+}
 
 // ================================
 // RENDER TABLE
@@ -23,7 +46,9 @@ function renderRegistry() {
     const total = filteredSchools.length;
     const totalPages = Math.ceil(total / PAGE_SIZE);
     const start = (currentPage - 1) * PAGE_SIZE;
-    const pageData = filteredSchools.slice(start, start + PAGE_SIZE);
+    const pageData = filteredSchools.slice(
+        start, start + PAGE_SIZE
+    );
 
     document.getElementById('noResults').style.display =
         total === 0 ? 'block' : 'none';
@@ -43,14 +68,15 @@ function renderRegistry() {
                     </code>
                 </td>
                 <td>${s.county}</td>
-                <td>${s.subCounty}</td>
+                <td>${s.sub_county}</td>
                 <td>${s.zone || '—'}</td>
                 <td style="font-size:11px;font-weight:600">
                     ${s.type}
                 </td>
                 <td>
-                    <span class="badge badge-${s.status
-                    .toLowerCase().replace(/ /g,'')}">
+                    <span class="badge
+                    badge-${s.status.toLowerCase()
+                    .replace(/ /g,'')}">
                         ${s.status}
                     </span>
                 </td>
@@ -60,8 +86,8 @@ function renderRegistry() {
                 overflow:hidden;
                 text-overflow:ellipsis;
                 white-space:nowrap"
-                title="${s.statusDetail || ''}">
-                    ${s.statusDetail || '—'}
+                title="${s.status_detail || ''}">
+                    ${s.status_detail || '—'}
                 </td>
                 <td>
                     <div style="display:flex;gap:4px">
@@ -84,8 +110,8 @@ function renderRegistry() {
 
     // Pagination info
     document.getElementById('pgInfo').textContent =
-        `Showing ${Math.min(start+1, total)}–
-        ${Math.min(start+PAGE_SIZE, total)}
+        `Showing ${Math.min(start+1,total)}–
+        ${Math.min(start+PAGE_SIZE,total)}
         of ${total.toLocaleString()} records`;
 
     // Pagination buttons
@@ -99,13 +125,17 @@ function renderRegistry() {
         const b = document.createElement('button');
         b.className = 'pg-btn';
         b.textContent = '«';
-        b.onclick = () => { currentPage = 1; renderRegistry(); };
+        b.onclick = () => {
+            currentPage = 1;
+            renderRegistry();
+        };
         pgBtns.appendChild(b);
     }
 
     for (let i = pgStart; i <= pgEnd; i++) {
         const b = document.createElement('button');
-        b.className = 'pg-btn' + (i === currentPage ? ' active' : '');
+        b.className = 'pg-btn' +
+            (i === currentPage ? ' active' : '');
         b.textContent = i;
         b.onclick = (pg => () => {
             currentPage = pg;
@@ -135,12 +165,12 @@ function filterRegistry() {
     const county = document.getElementById('filterCounty').value;
     const status = document.getElementById('filterStatus').value;
 
-    filteredSchools = SCHOOLS.filter(function(s) {
+    filteredSchools = allSchools.filter(function(s) {
         const mQ = !q ||
             s.name.toLowerCase().includes(q) ||
             s.nemis.toLowerCase().includes(q) ||
             (s.zone || '').toLowerCase().includes(q) ||
-            (s.subCounty || '').toLowerCase().includes(q);
+            (s.sub_county || '').toLowerCase().includes(q);
         const mC = !county || s.county === county;
         const mS = !status || s.status === status;
         return mQ && mC && mS;
@@ -154,14 +184,14 @@ function filterRegistry() {
 // VIEW PROFILE
 // ================================
 function viewProfile(id) {
-    const s = SCHOOLS.find(x => x.id === id);
+    const s = allSchools.find(x => x.id === id);
     if (!s) return;
 
     showPage('profile');
 
     document.getElementById('profileName').textContent = s.name;
     document.getElementById('profileSub').textContent =
-        `${s.subCounty} Sub-County, ${s.county} County`;
+        `${s.sub_county} Sub-County, ${s.county} County`;
     document.getElementById('profileBadge').innerHTML =
         `<span class="badge badge-${s.status.toLowerCase()
         .replace(/ /g,'')}">
@@ -187,7 +217,7 @@ function viewProfile(id) {
         </div>
         <div class="info-row">
             <span class="lbl">Sub-County</span>
-            <span class="val">${s.subCounty}</span>
+            <span class="val">${s.sub_county}</span>
         </div>
         <div class="info-row">
             <span class="lbl">Zone</span>
@@ -196,7 +226,10 @@ function viewProfile(id) {
         <div class="info-row">
             <span class="lbl">Coordinates</span>
             <span class="val">
-                ${s.lat ? s.lat.toFixed(4)+', '+s.lng.toFixed(4) : 'N/A'}
+                ${s.lat ?
+                    Number(s.lat).toFixed(4) + ', ' +
+                    Number(s.lng).toFixed(4)
+                    : 'N/A'}
             </span>
         </div>
     `;
@@ -205,7 +238,8 @@ function viewProfile(id) {
         <div class="info-row">
             <span class="lbl">Status</span>
             <span class="val">
-                <span class="badge badge-${s.status.toLowerCase()
+                <span class="badge
+                badge-${s.status.toLowerCase()
                 .replace(/ /g,'')}">
                     ${s.status}
                 </span>
@@ -213,7 +247,9 @@ function viewProfile(id) {
         </div>
         <div class="info-row">
             <span class="lbl">Detail</span>
-            <span class="val">${s.statusDetail || '—'}</span>
+            <span class="val">
+                ${s.status_detail || '—'}
+            </span>
         </div>
         <div class="info-row">
             <span class="lbl">Comments</span>
@@ -221,12 +257,13 @@ function viewProfile(id) {
         </div>
     `;
 
-    // Profile mini map
+    // Profile map
     const mapDiv = document.getElementById('profileMap');
     mapDiv.innerHTML = '';
 
     if (s.lat && s.lng &&
-        Math.abs(s.lat) < 90 && Math.abs(s.lng) < 90) {
+        Math.abs(s.lat) < 90 &&
+        Math.abs(s.lng) < 90) {
         setTimeout(function() {
             const m = L.map('profileMap')
                 .setView([s.lat, s.lng], 12);
@@ -235,13 +272,16 @@ function viewProfile(id) {
                 { attribution: '© OpenStreetMap' }
             ).addTo(m);
             L.marker([s.lat, s.lng]).addTo(m)
-                .bindPopup(`<b>${s.name}</b><br>${s.status}`)
-                .openPopup();
+                .bindPopup(
+                    `<b>${s.name}</b><br>${s.status}`
+                ).openPopup();
         }, 150);
     } else {
         mapDiv.innerHTML = `
-            <div style="padding:40px;text-align:center;
-            color:var(--text-muted);font-size:13px">
+            <div style="padding:40px;
+            text-align:center;
+            color:var(--text-muted);
+            font-size:13px">
                 No GPS coordinates available.
             </div>`;
     }
@@ -252,7 +292,8 @@ function viewProfile(id) {
 // ================================
 function openAddModal() {
     editId = null;
-    document.getElementById('modalTitle').textContent = 'Add School';
+    document.getElementById('modalTitle').textContent =
+        'Add School';
     ['fName','fNemis','fSubCounty','fZone',
     'fStatusDetail','fLat','fLng','fComments']
     .forEach(id => document.getElementById(id).value = '');
@@ -266,21 +307,23 @@ function openAddModal() {
 // ================================
 function openEditModal(id) {
     editId = id;
-    const s = SCHOOLS.find(x => x.id === id);
+    const s = allSchools.find(x => x.id === id);
     if (!s) return;
-    document.getElementById('modalTitle').textContent = 'Edit School';
+    document.getElementById('modalTitle').textContent =
+        'Edit School';
     document.getElementById('fName').value = s.name;
     document.getElementById('fNemis').value = s.nemis;
     document.getElementById('fType').value = s.type;
     document.getElementById('fCounty').value = s.county;
-    document.getElementById('fSubCounty').value = s.subCounty;
+    document.getElementById('fSubCounty').value = s.sub_county;
     document.getElementById('fZone').value = s.zone || '';
     document.getElementById('fStatus').value = s.status;
     document.getElementById('fStatusDetail').value =
-        s.statusDetail || '';
+        s.status_detail || '';
     document.getElementById('fLat').value = s.lat || '';
     document.getElementById('fLng').value = s.lng || '';
-    document.getElementById('fComments').value = s.comments || '';
+    document.getElementById('fComments').value =
+        s.comments || '';
     document.getElementById('schoolModal').classList.add('open');
 }
 
@@ -288,13 +331,14 @@ function openEditModal(id) {
 // CLOSE MODAL
 // ================================
 function closeModal() {
-    document.getElementById('schoolModal').classList.remove('open');
+    document.getElementById('schoolModal')
+        .classList.remove('open');
 }
 
 // ================================
 // SAVE SCHOOL
 // ================================
-function saveSchool() {
+async function saveSchool() {
     const name = document.getElementById('fName').value.trim();
     if (!name) { toast('School name is required'); return; }
 
@@ -311,39 +355,50 @@ function saveSchool() {
         status: document.getElementById('fStatus').value,
         statusDetail: document.getElementById('fStatusDetail')
             .value.trim(),
-        lat: parseFloat(document.getElementById('fLat').value)||null,
-        lng: parseFloat(document.getElementById('fLng').value)||null,
-        comments: document.getElementById('fComments').value.trim(),
+        lat: parseFloat(
+            document.getElementById('fLat').value) || null,
+        lng: parseFloat(
+            document.getElementById('fLng').value) || null,
+        comments: document.getElementById('fComments')
+            .value.trim(),
         region: 'North Rift'
     };
 
+    let result;
     if (editId) {
-        const i = SCHOOLS.findIndex(x => x.id === editId);
-        SCHOOLS[i] = { ...SCHOOLS[i], ...data };
-        toast('School updated successfully!');
+        result = await apiUpdateSchool(editId, data);
     } else {
-        data.id = SCHOOLS.length + 1;
-        SCHOOLS.unshift(data);
-        toast('School added successfully!');
+        result = await apiAddSchool(data);
     }
 
-    closeModal();
-    filteredSchools = [...SCHOOLS];
-    renderRegistry();
-    renderDashboard();
+    if (result.success) {
+        toast(editId ?
+            'School updated successfully!' :
+            'School added successfully!'
+        );
+        closeModal();
+        await loadSchools();
+        renderDashboard();
+    } else {
+        toast('Error: ' + result.error);
+    }
 }
 
 // ================================
 // DELETE SCHOOL
 // ================================
-function deleteSchool(id) {
+async function deleteSchool(id) {
     if (!confirm('Delete this school? Cannot be undone.')) return;
-    const index = SCHOOLS.findIndex(x => x.id === id);
-    SCHOOLS.splice(index, 1);
-    filteredSchools = filteredSchools.filter(x => x.id !== id);
-    renderRegistry();
-    renderDashboard();
-    toast('School deleted');
+
+    const result = await apiDeleteSchool(id);
+
+    if (result.success) {
+        toast('School deleted successfully');
+        await loadSchools();
+        renderDashboard();
+    } else {
+        toast('Error: ' + result.error);
+    }
 }
 
 // ================================
@@ -357,9 +412,11 @@ function exportCSV() {
     ];
     const rows = filteredSchools.map(s => [
         s.id, s.name, s.nemis, s.county,
-        s.subCounty, s.zone||'', s.type, s.status,
-        s.statusDetail||'', s.lat||'', s.lng||''
-    ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+        s.sub_county, s.zone || '', s.type, s.status,
+        s.status_detail || '', s.lat || '', s.lng || ''
+    ].map(v =>
+        `"${String(v).replace(/"/g,'""')}"`
+    ).join(','));
 
     const csv = [headers.join(','), ...rows].join('\n');
     const a = document.createElement('a');
@@ -371,4 +428,4 @@ function exportCSV() {
 }
 
 // Run on load
-renderRegistry();
+loadSchools();

@@ -2,59 +2,67 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" 
+    content="width=device-width, initial-scale=1.0">
     <title>SchoolNET | Login</title>
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 
-    <div class="login-container">
-        <div class="login-box">
+<div class="login-container">
+    <div class="login-box">
 
-            <div class="login-logo">
-                <div class="logo-icon">🌐</div>
-                <h1>SchoolNET</h1>
-                <p>North Rift Connectivity Management System</p>
+        <div class="login-logo">
+            <div class="logo-icon">🌐</div>
+            <h1>SchoolNET</h1>
+            <p>North Rift Connectivity Management System</p>
+        </div>
+
+        <div class="login-form">
+
+            <div class="login-group">
+                <label>Username</label>
+                <input 
+                    type="text" 
+                    id="loginUser" 
+                    placeholder="Enter your username"
+                    autocomplete="username"
+                >
             </div>
 
-            <div class="login-form">
-
-                <div class="login-group">
-                    <label>Username</label>
-                    <input 
-                        type="text" 
-                        id="loginUser" 
-                        placeholder="Enter your username"
-                    >
-                </div>
-
-                <div class="login-group">
-                    <label>Password</label>
+            <div class="login-group">
+                <label>Password</label>
+                <div class="password-wrap">
                     <input 
                         type="password" 
                         id="loginPass" 
                         placeholder="Enter your password"
+                        autocomplete="current-password"
                     >
+                    <button 
+                        class="toggle-pass" 
+                        onclick="togglePassword()"
+                        type="button">
+                        👁
+                    </button>
                 </div>
-
-                <div class="login-error" id="loginError">
-                    Wrong username or password
-                </div>
-
-                <button class="btn-login" onclick="doLogin()">
-                    Login to System
-                </button>
-
-                <div class="login-hint">
-                    Use: <strong>admin</strong> / 
-                    <strong>admin123</strong>
-                </div>
-
             </div>
+
+            <div class="login-error" id="loginError"></div>
+
+            <button 
+                class="btn-login" 
+                id="loginBtn"
+                onclick="doLogin()">
+                Login
+            </button>
+
         </div>
     </div>
+</div>
 
-    <script src="assets/js/auth.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/auth.js"></script>
 
 </body>
 </html>

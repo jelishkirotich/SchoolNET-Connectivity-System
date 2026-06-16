@@ -1,26 +1,45 @@
 // ================================
-// DASHBOARD JS
+// DASHBOARD JS — Connected to Flask
 // ================================
 
-function renderDashboard() {
+async function renderDashboard() {
 
-    const total = SCHOOLS.length;
-    const connected = SCHOOLS.filter(
-        s => s.status === 'Connected').length;
-    const scheduled = SCHOOLS.filter(
-        s => s.status === 'Scheduled').length;
-    const notConn = SCHOOLS.filter(
-        s => s.status === 'Not Connected').length;
-    const counties = [
-        ...new Set(SCHOOLS.map(s => s.county))
-    ].length;
+    // Show loading
+    document.getElementById('statsGrid').innerHTML = `
+        <div class="stat-card">
+            <div class="stat-label">Loading...</div>
+            <div class="stat-value">...</div>
+        </div>
+    `;
+
+    // Fetch stats from Flask
+    const stats = await fetchStats();
+
+    if (!stats) {
+        document.getElementById('statsGrid').innerHTML = `
+            <div class="stat-card">
+                <div class="stat-label">Error</div>
+                <div class="stat-value" 
+                style="font-size:16px;color:red">
+                    Cannot connect to server
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    const total = stats.total;
+    const connected = stats.connected;
+    const scheduled = stats.scheduled;
+    const notConn = stats.not_connected;
+    const counties = stats.by_county.length;
 
     // Stat Cards
     document.getElementById('statsGrid').innerHTML = `
         <div class="stat-card">
             <div class="stat-label">Total Schools</div>
             <div class="stat-value">
-                ${total.toLocaleString()}
+                ${Number(total).toLocaleString()}
             </div>
             <div class="stat-sub">North Rift Region</div>
         </div>
@@ -39,7 +58,7 @@ function renderDashboard() {
         <div class="stat-card red">
             <div class="stat-label">Not Connected</div>
             <div class="stat-value">
-                ${notConn.toLocaleString()}
+                ${Number(notConn).toLocaleString()}
             </div>
             <div class="stat-sub">
                 ${(notConn/total*100).toFixed(1)}% unconnected
@@ -53,25 +72,21 @@ function renderDashboard() {
     `;
 
     // County Bar Chart
-    const countyCounts = {};
-    SCHOOLS.forEach(s => {
-        countyCounts[s.county] = (countyCounts[s.county] || 0) + 1;
-    });
-
-    const sorted = Object.entries(countyCounts)
-        .sort((a, b) => b[1] - a[1]);
-    const max = sorted[0][1];
+    const byCounty = stats.by_county;
+    const max = Math.max(...byCounty.map(c => c.total));
 
     document.getElementById('countyChart').innerHTML =
-        sorted.map(([c, n]) => `
+        byCounty.map(c => `
             <div class="bar-row">
-                <div class="bar-label" title="${c}">${c}</div>
+                <div class="bar-label" title="${c.county}">
+                    ${c.county}
+                </div>
                 <div class="bar-track">
                     <div class="bar-fill"
-                    style="width:${(n/max*100).toFixed(1)}%">
+                    style="width:${(c.total/max*100).toFixed(1)}%">
                     </div>
                 </div>
-                <div class="bar-count">${n}</div>
+                <div class="bar-count">${c.total}</div>
             </div>
         `).join('');
 
@@ -79,16 +94,16 @@ function renderDashboard() {
     const ctx = document.getElementById('donutCanvas')
         .getContext('2d');
     const colors = [
-        '#27AE60', '#F5A623', '#C0392B', '#95a5a6'
+        '#27AE60','#F5A623','#C0392B','#95a5a6'
     ];
     const labels = [
-        'Connected', 'Scheduled', 'Not Connected', 'Unknown'
+        'Connected','Scheduled','Not Connected','Unknown'
     ];
     const vals = [
-        connected,
-        scheduled,
-        notConn,
-        SCHOOLS.filter(s => s.status === 'Unknown').length
+        Number(connected),
+        Number(scheduled),
+        Number(notConn),
+        0
     ];
     const tot = vals.reduce((a, b) => a + b, 0);
 
@@ -105,20 +120,17 @@ function renderDashboard() {
         start += angle;
     });
 
-    // Center hole
     ctx.beginPath();
     ctx.arc(65, 65, 30, 0, 2 * Math.PI);
     ctx.fillStyle = '#fff';
     ctx.fill();
 
-    // Center number
     ctx.fillStyle = '#1a1a2e';
     ctx.font = 'bold 14px Segoe UI';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(total.toLocaleString(), 65, 65);
+    ctx.fillText(Number(total).toLocaleString(), 65, 65);
 
-    // Legend
     document.getElementById('donutLegend').innerHTML =
         labels.map((l, i) => `
             <div class="legend-item">
@@ -128,13 +140,14 @@ function renderDashboard() {
             </div>
         `).join('');
 
-    // Recent Table
+    // Recent Schools Table
+    const schools = await fetchSchools();
+
     document.getElementById('recentTable').innerHTML =
-        SCHOOLS.slice(0, 10).map(s => `
+        schools.slice(0, 10).map(s => `
             <tr>
-                <td style="color:var(--text-muted);font-size:12px">
-                    ${s.id}
-                </td>
+                <td style="color:var(--text-muted);
+                font-size:12px">${s.id}</td>
                 <td>
                     <a href="#"
                     onclick="viewProfile(${s.id});return false"
@@ -143,7 +156,7 @@ function renderDashboard() {
                     </a>
                 </td>
                 <td>${s.county}</td>
-                <td>${s.subCounty}</td>
+                <td>${s.sub_county}</td>
                 <td>
                     <code style="font-size:11px;
                     background:var(--bg);

@@ -1,62 +1,14 @@
 // ================================
-// ADMIN JS
+// ADMIN JS — Connected to Flask
 // ================================
 
-let USERS = [
-    {
-        id: 1,
-        name: 'Admin User',
-        username: 'admin',
-        role: 'Super Admin',
-        status: 'Active'
-    },
-    {
-        id: 2,
-        name: 'County Officer',
-        username: 'county01',
-        role: 'Editor',
-        status: 'Active'
-    },
-    {
-        id: 3,
-        name: 'Field Agent',
-        username: 'agent01',
-        role: 'Field Agent',
-        status: 'Inactive'
-    }
-];
+async function renderAdmin() {
 
-const AUDIT_LOGS = [
-    {
-        action: 'Admin imported 1,457 school records',
-        time: '2026-06-09 10:23'
-    },
-    {
-        action: 'System initialised successfully',
-        time: '2026-06-09 10:20'
-    },
-    {
-        action: 'Registry exported to CSV',
-        time: '2026-06-08 14:10'
-    },
-    {
-        action: 'Status updated: KAINUK GIRLS → Scheduled',
-        time: '2026-06-08 09:05'
-    },
-    {
-        action: 'New user added: County Officer',
-        time: '2026-06-07 11:30'
-    }
-];
+    // Load users from Flask
+    const users = await fetchUsers();
 
-// ================================
-// RENDER ADMIN
-// ================================
-function renderAdmin() {
-
-    // Users Table
     document.getElementById('usersTable').innerHTML =
-        USERS.map(u => `
+        users.map(u => `
             <tr>
                 <td style="padding:7px 4px">
                     <strong>${u.name}</strong>
@@ -72,49 +24,54 @@ function renderAdmin() {
             </tr>
         `).join('');
 
-    // Audit Log
+    // Load audit logs from Flask
+    const logs = await fetchLogs();
+
     document.getElementById('auditLog').innerHTML =
-        AUDIT_LOGS.map(l => `
+        logs.map(l => `
             <div class="audit-item">
                 ${l.action}
-                <div class="audit-time">${l.time}</div>
+                <div class="audit-time">
+                    ${l.created_at}
+                </div>
             </div>
         `).join('');
 
-    // System Info
-    document.getElementById('sysInfo').innerHTML = `
-        <div class="info-row">
-            <span class="lbl">Version</span>
-            <span class="val">1.0.0</span>
-        </div>
-        <div class="info-row">
-            <span class="lbl">Total Records</span>
-            <span class="val">
-                ${SCHOOLS.length.toLocaleString()}
-            </span>
-        </div>
-        <div class="info-row">
-            <span class="lbl">Region</span>
-            <span class="val">North Rift</span>
-        </div>
-        <div class="info-row">
-            <span class="lbl">Counties</span>
-            <span class="val">
-                ${[...new Set(SCHOOLS.map(s => s.county))].length}
-            </span>
-        </div>
-        <div class="info-row">
-            <span class="lbl">Connected</span>
-            <span class="val">
-                ${SCHOOLS.filter(s =>
-                    s.status === 'Connected').length}
-            </span>
-        </div>
-        <div class="info-row">
-            <span class="lbl">Last Updated</span>
-            <span class="val">June 2026</span>
-        </div>
-    `;
+    // System info from Flask
+    const stats = await fetchStats();
+
+    if (stats) {
+        document.getElementById('sysInfo').innerHTML = `
+            <div class="info-row">
+                <span class="lbl">Version</span>
+                <span class="val">1.0.0</span>
+            </div>
+            <div class="info-row">
+                <span class="lbl">Total Records</span>
+                <span class="val">
+                    ${Number(stats.total).toLocaleString()}
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="lbl">Region</span>
+                <span class="val">North Rift</span>
+            </div>
+            <div class="info-row">
+                <span class="lbl">Counties</span>
+                <span class="val">
+                    ${stats.by_county.length}
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="lbl">Connected</span>
+                <span class="val">${stats.connected}</span>
+            </div>
+            <div class="info-row">
+                <span class="lbl">Last Updated</span>
+                <span class="val">June 2026</span>
+            </div>
+        `;
+    }
 }
 
 // ================================
@@ -128,35 +85,37 @@ function openUserModal() {
 }
 
 function closeUserModal() {
-    document.getElementById('userModal').classList.remove('open');
+    document.getElementById('userModal')
+        .classList.remove('open');
 }
 
-function saveUser() {
+async function saveUser() {
     const name = document.getElementById('uName').value.trim();
     const username = document.getElementById('uUsername')
         .value.trim();
+    const password = document.getElementById('uPassword')
+        .value.trim();
 
-    if (!name || !username) {
-        toast('Name and username are required');
+    if (!name || !username || !password) {
+        toast('All fields are required');
         return;
     }
 
-    USERS.push({
-        id: USERS.length + 1,
+    const result = await apiAddUser({
         name: name,
         username: username,
+        password: password,
         role: document.getElementById('uRole').value,
         status: document.getElementById('uStatus').value
     });
 
-    AUDIT_LOGS.unshift({
-        action: `New user added: ${name}`,
-        time: new Date().toLocaleString()
-    });
-
-    closeUserModal();
-    renderAdmin();
-    toast('User added successfully!');
+    if (result.success) {
+        toast('User added successfully!');
+        closeUserModal();
+        renderAdmin();
+    } else {
+        toast('Error: ' + result.error);
+    }
 }
 
 // Run on load

@@ -1,14 +1,8 @@
 // ================================
-// AUTH JS
+// AUTH JS — Connected to Flask
 // ================================
 
-const USERS_AUTH = [
-    { username: 'admin', password: 'admin123', role: 'Super Admin' },
-    { username: 'officer', password: 'officer123', role: 'Editor' },
-    { username: 'viewer', password: 'viewer123', role: 'Viewer' }
-];
-
-function doLogin() {
+async function doLogin() {
     const u = document.getElementById('loginUser').value.trim();
     const p = document.getElementById('loginPass').value.trim();
     const err = document.getElementById('loginError');
@@ -19,19 +13,29 @@ function doLogin() {
         return;
     }
 
-    const user = USERS_AUTH.find(
-        x => x.username === u && x.password === p
-    );
+    // Show loading
+    const btn = document.querySelector('.btn-login');
+    btn.textContent = 'Logging in...';
+    btn.disabled = true;
 
-    if (user) {
+    // Call Flask API
+    const result = await apiLogin(u, p);
+
+    if (result.success) {
+        // Save user info
         sessionStorage.setItem('loggedIn', 'true');
-        sessionStorage.setItem('username', user.username);
-        sessionStorage.setItem('role', user.role);
+        sessionStorage.setItem('username', result.user.username);
+        sessionStorage.setItem('role', result.user.role);
+        sessionStorage.setItem('name', result.user.name);
+
         // Go to dashboard
         window.location.href = 'pages/dashboard.html';
     } else {
-        err.textContent = 'Wrong username or password';
+        err.textContent = result.error ||
+            'Wrong username or password';
         err.style.display = 'block';
+        btn.textContent = 'Login to System';
+        btn.disabled = false;
     }
 }
 
