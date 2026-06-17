@@ -1,263 +1,47 @@
-/* ================================
-   ADMIN GRID
-================================ */
-.admin-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 16px;
-}
+/* Admin specific styles */
 
-/* ================================
-   ADMIN CARD
-================================ */
-.admin-card {
-    background: white;
-    border: 1px solid #dde3ea;
-    border-radius: 10px;
-    padding: 20px;
-}
-
-.admin-card h3 {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #dde3ea;
-}
-
-/* ================================
-   ADMIN TABLE
-================================ */
-.admin-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-    margin-bottom: 14px;
-}
-
-.admin-table th {
-    text-align: left;
-    padding: 8px 4px;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: #5a6370;
-    border-bottom: 1px solid #dde3ea;
-}
-
-.admin-table td {
-    padding: 8px 4px;
-    border-bottom: 1px solid #f4f6f9;
-}
-
-/* ================================
-   BUTTONS
-================================ */
-.btn-add-user {
-    padding: 7px 14px;
-    background: #0A5C2E;
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    background: var(--brand);
     color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.btn-add-user:hover { background: #12803f; }
-
-.btn-remove {
-    padding: 3px 8px;
-    background: #C0392B;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 11px;
-    cursor: pointer;
-}
-
-/* ================================
-   ROLES
-================================ */
-.roles-list {
+    border-radius: 50%;
     display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.role-item {
-    padding: 10px 14px;
-    background: #f4f6f9;
-    border-radius: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.role-name {
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.role-perms {
-    font-size: 12px;
-    color: #5a6370;
-}
-
-/* ================================
-   AUDIT LOG
-================================ */
-.audit-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.audit-item {
-    padding: 8px 12px;
-    background: #f4f6f9;
-    border-radius: 6px;
-    font-size: 12.5px;
-    color: #5a6370;
-    border-left: 3px solid #0A5C2E;
-    line-height: 1.5;
-}
-
-.audit-time {
-    font-size: 11px;
-    color: #95a5a6;
-    margin-top: 2px;
-}
-
-/* ================================
-   SYSTEM INFO
-================================ */
-.info-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid #f4f6f9;
-    font-size: 13px;
-}
-
-.info-row:last-child { border-bottom: none; }
-
-.info-label { color: #5a6370; }
-
-.info-value {
-    font-weight: 600;
-    color: #1a1a2e;
-}
-
-/* ================================
-   MODAL
-================================ */
-.modal-bg {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 200;
     align-items: center;
     justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
 }
 
-.modal-bg.open { display: flex; }
-
-.modal {
-    background: white;
-    border-radius: 12px;
-    width: 500px;
-    max-width: 95vw;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-}
-
-.modal-header {
+.user-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 18px 24px;
-    border-bottom: 1px solid #dde3ea;
-}
-
-.modal-header h3 {
-    font-size: 15px;
-    font-weight: 600;
-}
-
-.modal-header button {
-    background: none;
-    border: none;
-    font-size: 22px;
-    cursor: pointer;
-    color: #5a6370;
-}
-
-.modal-body { padding: 20px 24px; }
-
-.form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.form-group.full { grid-column: 1 / -1; }
-
-.form-group label {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: #5a6370;
-}
-
-.form-group input,
-.form-group select {
-    padding: 8px 12px;
-    border: 1px solid #dde3ea;
-    border-radius: 6px;
-    font-size: 13px;
-    outline: none;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-    border-color: #0A5C2E;
-}
-
-.modal-footer {
-    display: flex;
-    justify-content: flex-end;
     gap: 10px;
-    padding: 14px 24px;
-    border-top: 1px solid #dde3ea;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--bg);
 }
 
-.btn-cancel {
-    padding: 8px 18px;
-    background: white;
-    color: #0A5C2E;
-    border: 1px solid #0A5C2E;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
+.user-row:last-child {
+    border-bottom: none;
 }
 
-.btn-save {
-    padding: 8px 18px;
-    background: #0A5C2E;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 13px;
+.permission-tag {
+    display: inline-flex;
+    padding: 2px 8px;
+    background: var(--brand-pale);
+    color: var(--brand);
+    border-radius: 4px;
+    font-size: 11px;
     font-weight: 600;
-    cursor: pointer;
+}
+
+.system-healthy {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--success);
+    font-weight: 600;
+    font-size: 13px;
+    margin-top: 12px;
 }

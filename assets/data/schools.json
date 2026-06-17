@@ -1,6 +1,7 @@
 {
+  "description": "SchoolNET North Rift Region Data",
+  "note": "Full data is stored in MySQL database",
   "region": "North Rift",
-  "description": "JSS Connectivity Planning Data",
   "counties": [
     "Turkana",
     "West Pokot",
@@ -10,9 +11,11 @@
     "Nandi",
     "Baringo"
   ],
-  "total_schools": 1457,
-  "connected": 7,
-  "scheduled": 31,
-  "not_connected": 1379,
-  "note": "Full school data is in assets/js/storage.js"
+  "stats": {
+    "total": 1457,
+    "connected": 7,
+    "scheduled": 31,
+    "not_connected": 1379
+  },
+  "api_endpoint": "http://127.0.0.1:5000/api/schools"
 }

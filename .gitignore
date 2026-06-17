@@ -1,6 +1,30 @@
-uploads/
-node_modules/
-.DS_Store
-*.log
-Thumbs.db
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
 .env
+venv/
+env/
+
+# Database
+*.sql
+*.db
+*.sqlite
+
+# Node
+node_modules/
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Uploads
+uploads/school-images/*
+uploads/documents/*
+
+# Logs
+*.log
+
+# VS Code
+.vscode/
