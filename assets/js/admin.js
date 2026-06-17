@@ -1,12 +1,11 @@
 // ================================
-// ADMIN JS — Connected to Flask
+// ADMIN JS
 // ================================
 
 async function renderAdmin() {
 
-    // Load users from Flask
+    // Users
     const users = await fetchUsers();
-
     document.getElementById('usersTable').innerHTML =
         users.map(u => `
             <tr>
@@ -15,19 +14,19 @@ async function renderAdmin() {
                 </td>
                 <td style="padding:7px 4px">${u.role}</td>
                 <td style="padding:7px 4px">
-                    <span class="badge
-                    badge-${u.status === 'Active' ?
-                    'connected' : 'unknown'}">
+                    <span class="badge badge-${
+                        u.status === 'Active' ?
+                        'connected' : 'unknown'}">
                         ${u.status}
                     </span>
                 </td>
             </tr>
         `).join('');
 
-    // Load audit logs from Flask
+    // Audit Logs
     const logs = await fetchLogs();
-
     document.getElementById('auditLog').innerHTML =
+        logs.length > 0 ?
         logs.map(l => `
             <div class="audit-item">
                 ${l.action}
@@ -35,11 +34,11 @@ async function renderAdmin() {
                     ${l.created_at}
                 </div>
             </div>
-        `).join('');
+        `).join('') :
+        '<div class="audit-item">No logs yet</div>';
 
-    // System info from Flask
+    // System Info
     const stats = await fetchStats();
-
     if (stats) {
         document.getElementById('sysInfo').innerHTML = `
             <div class="info-row">
@@ -67,8 +66,8 @@ async function renderAdmin() {
                 <span class="val">${stats.connected}</span>
             </div>
             <div class="info-row">
-                <span class="lbl">Last Updated</span>
-                <span class="val">June 2026</span>
+                <span class="lbl">Backend</span>
+                <span class="val">Flask + MySQL ✅</span>
             </div>
         `;
     }
@@ -78,10 +77,11 @@ async function renderAdmin() {
 // USER MODAL
 // ================================
 function openUserModal() {
-    document.getElementById('uName').value = '';
-    document.getElementById('uUsername').value = '';
-    document.getElementById('uPassword').value = '';
-    document.getElementById('userModal').classList.add('open');
+    ['uName','uUsername','uPassword'].forEach(function(id) {
+        document.getElementById(id).value = '';
+    });
+    document.getElementById('userModal')
+        .classList.add('open');
 }
 
 function closeUserModal() {
@@ -90,31 +90,38 @@ function closeUserModal() {
 }
 
 async function saveUser() {
-    const name = document.getElementById('uName').value.trim();
+    const name = document.getElementById('uName')
+        .value.trim();
     const username = document.getElementById('uUsername')
         .value.trim();
     const password = document.getElementById('uPassword')
         .value.trim();
 
     if (!name || !username || !password) {
-        toast('All fields are required');
+        toast('All fields are required', 'error');
+        return;
+    }
+
+    if (password.length < 6) {
+        toast('Password must be at least 6 characters',
+            'error');
         return;
     }
 
     const result = await apiAddUser({
-        name: name,
-        username: username,
-        password: password,
+        name,
+        username,
+        password,
         role: document.getElementById('uRole').value,
         status: document.getElementById('uStatus').value
     });
 
     if (result.success) {
-        toast('User added successfully!');
+        toast('User added successfully!', 'success');
         closeUserModal();
         renderAdmin();
     } else {
-        toast('Error: ' + result.error);
+        toast('Error: ' + result.error, 'error');
     }
 }
 

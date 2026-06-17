@@ -1,5 +1,5 @@
 // ================================
-// APP JS
+// APP JS — Runs on every page
 // ================================
 
 // Check login
@@ -12,30 +12,22 @@ function checkAuth() {
 
 // Logout
 function doLogout() {
-    sessionStorage.removeItem('loggedIn');
-    sessionStorage.removeItem('username');
-    sessionStorage.removeItem('role');
+    sessionStorage.clear();
     window.location.href = '../index.html';
 }
 
 // Show page
 function showPage(p) {
-
-    // Hide all pages
     document.querySelectorAll('.page').forEach(function(el) {
         el.classList.remove('active');
     });
-
-    // Remove active from all nav links
     document.querySelectorAll('.nav-link').forEach(function(el) {
         el.classList.remove('active');
     });
 
-    // Show selected page
     const page = document.getElementById('page-' + p);
     if (page) page.classList.add('active');
 
-    // Set active nav link
     document.querySelectorAll('.nav-link').forEach(function(link) {
         const oc = link.getAttribute('onclick') || '';
         if (oc.includes("'" + p + "'")) {
@@ -43,7 +35,6 @@ function showPage(p) {
         }
     });
 
-    // Update topbar title
     const titles = {
         dashboard: 'Dashboard',
         registry:  'School Registry',
@@ -52,37 +43,98 @@ function showPage(p) {
         reports:   'Reports & Analytics',
         admin:     'Administration'
     };
-    const titleEl = document.getElementById('pageTitle');
-    if (titleEl) {
-        titleEl.textContent = titles[p] || p;
-    }
 
-    // Init map when map page is opened
-    if (p === 'map') {
-        setTimeout(initMap, 200);
-    }
+    const titleEl = document.getElementById('pageTitle');
+    if (titleEl) titleEl.textContent = titles[p] || p;
+
+    if (p === 'map') setTimeout(initMap, 200);
 }
 
 // Toast notification
-function toast(msg) {
+function toast(msg, type = '') {
     const t = document.getElementById('toast');
     if (!t) return;
     t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3000);
+    t.className = 'show';
+    if (type) t.classList.add(type);
+    setTimeout(() => {
+        t.className = '';
+    }, 3000);
 }
 
-// Set user badge initials
-function setUserBadge() {
-    const username = sessionStorage.getItem('username') || 'AD';
+// Set user info in topbar
+function setUserInfo() {
+    const username = sessionStorage.getItem('username') || '';
+    const role = sessionStorage.getItem('role') || '';
+    const name = sessionStorage.getItem('name') || '';
+
     const badge = document.getElementById('userBadge');
+    const userNameEl = document.getElementById('userName');
+    const userRoleEl = document.getElementById('userRole');
+
     if (badge) {
         badge.textContent = username
             .substring(0, 2)
             .toUpperCase();
     }
+    if (userNameEl) userNameEl.textContent = name;
+    if (userRoleEl) userRoleEl.textContent = role;
 }
 
-// Run on every page load
+// Switch modal tabs
+function switchTab(modalPrefix, tabId) {
+    // Deactivate all tabs and contents
+    document.querySelectorAll('.modal-tab').forEach(function(t) {
+        t.classList.remove('active');
+    });
+    document.querySelectorAll('.tab-content').forEach(function(c) {
+        c.classList.remove('active');
+    });
+
+    // Activate selected tab
+    const tab = document.getElementById(tabId);
+    if (tab) tab.classList.add('active');
+
+    // Activate selected content
+    const content = document.getElementById(
+        modalPrefix + '-' + tabId
+    );
+    if (content) content.classList.add('active');
+}
+
+// File preview
+function previewFile(inputId, previewId) {
+    const input = document.getElementById(inputId);
+    const preview = document.getElementById(previewId);
+    const file = input.files[0];
+
+    if (!file) return;
+
+    const nameEl = document.getElementById(
+        inputId.replace('File', 'FileName')
+    );
+    const sizeEl = document.getElementById(
+        inputId.replace('File', 'FileSize')
+    );
+
+    if (nameEl) nameEl.textContent = file.name;
+    if (sizeEl) {
+        const size = file.size < 1024 * 1024
+            ? (file.size / 1024).toFixed(1) + ' KB'
+            : (file.size / 1024 / 1024).toFixed(1) + ' MB';
+        sizeEl.textContent = size;
+    }
+
+    preview.classList.add('show');
+}
+
+// Clear file
+function clearFile(inputId, previewId) {
+    document.getElementById(inputId).value = '';
+    document.getElementById(previewId)
+        .classList.remove('show');
+}
+
+// Run on load
 checkAuth();
-setUserBadge();
+setUserInfo();

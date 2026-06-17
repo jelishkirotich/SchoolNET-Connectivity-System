@@ -12,91 +12,80 @@ const STATUS_COLORS = {
     'Unknown':       '#95a5a6'
 };
 
-// ================================
-// INIT MAP
-// ================================
-function initMap() {
+async function initMap() {
     if (!leafletMap) {
-        leafletMap = L.map('mapContainer').setView([2.5, 36.0], 7);
+        leafletMap = L.map('mapContainer')
+            .setView([2.5, 36.0], 7);
         L.tileLayer(
             'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            { attribution: '© OpenStreetMap contributors' }
+            {attribution: '© OpenStreetMap contributors'}
         ).addTo(leafletMap);
 
-        // Populate county dropdown
-        const counties = [
-            ...new Set(SCHOOLS.map(s => s.county))
-        ].sort();
-        const mapCounty = document.getElementById('mapCounty');
-        counties.forEach(function(c) {
-            const o = document.createElement('option');
-            o.value = o.textContent = c;
-            mapCounty.appendChild(o);
-        });
-
-        // Populate sub-county dropdown
+        // Sub-county dropdown
         const subs = [
-            ...new Set(SCHOOLS.map(s => s.subCounty).filter(Boolean))
+            ...new Set(
+                allSchools.map(s => s.sub_county)
+                .filter(Boolean)
+            )
         ].sort();
-        const mapSub = document.getElementById('mapSubCounty');
-        subs.forEach(function(sc) {
-            const o = document.createElement('option');
-            o.value = o.textContent = sc;
-            mapSub.appendChild(o);
-        });
+        const sel = document.getElementById('mapSubCounty');
+        if (sel) {
+            subs.forEach(function(sc) {
+                const o = document.createElement('option');
+                o.value = o.textContent = sc;
+                sel.appendChild(o);
+            });
+        }
     }
     renderMap();
 }
 
-// ================================
-// RENDER MAP
-// ================================
 function renderMap() {
     if (!leafletMap) return;
 
-    // Remove old markers
     markers.forEach(m => leafletMap.removeLayer(m));
     markers = [];
 
-    const county = document.getElementById('mapCounty').value;
-    const status = document.getElementById('mapStatus').value;
-    const subCounty = document.getElementById('mapSubCounty').value;
+    const county =
+        document.getElementById('mapCounty').value;
+    const status =
+        document.getElementById('mapStatus').value;
+    const subCounty =
+        document.getElementById('mapSubCounty').value;
 
-    // Filter schools with valid coordinates
-    const filtered = SCHOOLS.filter(function(s) {
+    const filtered = allSchools.filter(function(s) {
         const ok = s.lat && s.lng &&
             !isNaN(s.lat) && !isNaN(s.lng) &&
-            Math.abs(s.lat) < 90 && Math.abs(s.lng) < 90;
+            Math.abs(s.lat) < 90 &&
+            Math.abs(s.lng) < 90;
         if (!ok) return false;
         if (county && s.county !== county) return false;
         if (status && s.status !== status) return false;
-        if (subCounty && s.subCounty !== subCounty) return false;
+        if (subCounty && s.sub_county !== subCounty)
+            return false;
         return true;
     });
 
     document.getElementById('mapCount').textContent =
         `Showing ${filtered.length} schools on map`;
 
-    // Add markers
     filtered.forEach(function(s) {
         const color = STATUS_COLORS[s.status] || '#999';
 
         const icon = L.divIcon({
-            html: `
-                <div style="
-                    width:12px;
-                    height:12px;
-                    border-radius:50%;
-                    background:${color};
-                    border:2px solid white;
-                    box-shadow:0 1px 4px rgba(0,0,0,0.4);
-                "></div>`,
+            html: `<div style="
+                width:12px;height:12px;
+                border-radius:50%;
+                background:${color};
+                border:2px solid white;
+                box-shadow:0 1px 4px rgba(0,0,0,0.4)">
+            </div>`,
             className: '',
             iconSize: [12, 12],
             iconAnchor: [6, 6]
         });
 
-        const marker = L.marker([s.lat, s.lng], { icon })
+        const marker = L.marker([s.lat, s.lng], {icon})
             .addTo(leafletMap)
             .bindPopup(`
                 <div style="font-family:Segoe UI,sans-serif;
@@ -107,27 +96,22 @@ function renderMap() {
                     <span style="font-size:12px;color:#666">
                         ${s.nemis} · ${s.county}
                     </span><br><br>
-                    <span style="
-                        background:${color};
-                        color:white;
-                        padding:2px 10px;
-                        border-radius:10px;
-                        font-size:11px;
-                        font-weight:600">
+                    <span style="background:${color};
+                    color:white;padding:2px 10px;
+                    border-radius:10px;
+                    font-size:11px;font-weight:600">
                         ${s.status}
                     </span><br><br>
                     <span style="font-size:12px;color:#666">
-                        📍 ${s.subCounty}, ${s.county}
+                        📍 ${s.sub_county}, ${s.county}
                     </span><br>
                     <span style="font-size:12px;color:#666">
-                        ${s.statusDetail || ''}
+                        ${s.status_detail || ''}
                     </span><br>
                     <a href="#"
                     onclick="viewProfile(${s.id});return false"
-                    style="font-size:12px;
-                    color:#0A5C2E;
-                    font-weight:600;
-                    margin-top:6px;
+                    style="font-size:12px;color:#0A5C2E;
+                    font-weight:600;margin-top:6px;
                     display:block">
                         View Profile →
                     </a>

@@ -1,10 +1,8 @@
 // ================================
-// DASHBOARD JS — Connected to Flask
+// DASHBOARD JS
 // ================================
 
 async function renderDashboard() {
-
-    // Show loading
     document.getElementById('statsGrid').innerHTML = `
         <div class="stat-card">
             <div class="stat-label">Loading...</div>
@@ -12,26 +10,25 @@ async function renderDashboard() {
         </div>
     `;
 
-    // Fetch stats from Flask
     const stats = await fetchStats();
 
     if (!stats) {
         document.getElementById('statsGrid').innerHTML = `
             <div class="stat-card">
-                <div class="stat-label">Error</div>
+                <div class="stat-label">Connection Error</div>
                 <div class="stat-value" 
-                style="font-size:16px;color:red">
-                    Cannot connect to server
+                style="font-size:16px;color:var(--danger)">
+                    Make sure Flask is running on port 5000
                 </div>
             </div>
         `;
         return;
     }
 
-    const total = stats.total;
-    const connected = stats.connected;
-    const scheduled = stats.scheduled;
-    const notConn = stats.not_connected;
+    const total = Number(stats.total);
+    const connected = Number(stats.connected);
+    const scheduled = Number(stats.scheduled);
+    const notConn = Number(stats.not_connected);
     const counties = stats.by_county.length;
 
     // Stat Cards
@@ -39,7 +36,7 @@ async function renderDashboard() {
         <div class="stat-card">
             <div class="stat-label">Total Schools</div>
             <div class="stat-value">
-                ${Number(total).toLocaleString()}
+                ${total.toLocaleString()}
             </div>
             <div class="stat-sub">North Rift Region</div>
         </div>
@@ -58,7 +55,7 @@ async function renderDashboard() {
         <div class="stat-card red">
             <div class="stat-label">Not Connected</div>
             <div class="stat-value">
-                ${Number(notConn).toLocaleString()}
+                ${notConn.toLocaleString()}
             </div>
             <div class="stat-sub">
                 ${(notConn/total*100).toFixed(1)}% unconnected
@@ -99,18 +96,14 @@ async function renderDashboard() {
     const labels = [
         'Connected','Scheduled','Not Connected','Unknown'
     ];
-    const vals = [
-        Number(connected),
-        Number(scheduled),
-        Number(notConn),
-        0
-    ];
+    const vals = [connected, scheduled, notConn, 0];
     const tot = vals.reduce((a, b) => a + b, 0);
 
     let start = -Math.PI / 2;
     ctx.clearRect(0, 0, 130, 130);
 
     vals.forEach(function(v, i) {
+        if (v === 0) return;
         const angle = (v / tot) * 2 * Math.PI;
         ctx.beginPath();
         ctx.moveTo(65, 65);
@@ -126,10 +119,10 @@ async function renderDashboard() {
     ctx.fill();
 
     ctx.fillStyle = '#1a1a2e';
-    ctx.font = 'bold 14px Segoe UI';
+    ctx.font = 'bold 13px Segoe UI';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(Number(total).toLocaleString(), 65, 65);
+    ctx.fillText(total.toLocaleString(), 65, 65);
 
     document.getElementById('donutLegend').innerHTML =
         labels.map((l, i) => `
@@ -140,9 +133,8 @@ async function renderDashboard() {
             </div>
         `).join('');
 
-    // Recent Schools Table
+    // Recent Schools
     const schools = await fetchSchools();
-
     document.getElementById('recentTable').innerHTML =
         schools.slice(0, 10).map(s => `
             <tr>
@@ -150,8 +142,11 @@ async function renderDashboard() {
                 font-size:12px">${s.id}</td>
                 <td>
                     <a href="#"
-                    onclick="viewProfile(${s.id});return false"
-                    style="color:var(--brand);font-weight:600">
+                    onclick="viewProfile(${s.id});
+                    return false"
+                    style="color:var(--brand);
+                    font-weight:600;
+                    text-decoration:none">
                         ${s.name}
                     </a>
                 </td>
@@ -166,9 +161,8 @@ async function renderDashboard() {
                     </code>
                 </td>
                 <td>
-                    <span class="badge
-                    badge-${s.status.toLowerCase()
-                    .replace(/ /g,'')}">
+                    <span class="badge badge-${s.status
+                    .toLowerCase().replace(/ /g,'')}">
                         ${s.status}
                     </span>
                 </td>

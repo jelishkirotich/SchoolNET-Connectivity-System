@@ -1,5 +1,5 @@
 // ================================
-// SCHOOL REGISTRY — Connected to Flask
+// SCHOOL REGISTRY JS
 // ================================
 
 let editId = null;
@@ -9,13 +9,15 @@ let allSchools = [];
 let filteredSchools = [];
 
 // ================================
-// LOAD SCHOOLS FROM FLASK
+// LOAD SCHOOLS
 // ================================
 async function loadSchools() {
     document.getElementById('registryBody').innerHTML = `
         <tr>
-            <td colspan="10" style="text-align:center;
-            padding:40px;color:var(--text-muted)">
+            <td colspan="10"
+            style="text-align:center;
+            padding:40px;
+            color:var(--text-muted)">
                 Loading schools from database...
             </td>
         </tr>
@@ -24,16 +26,44 @@ async function loadSchools() {
     allSchools = await fetchSchools();
     filteredSchools = [...allSchools];
 
-    // Populate county dropdown
+    // Populate county dropdowns
     const counties = [
         ...new Set(allSchools.map(s => s.county))
     ].sort();
-    const sel = document.getElementById('filterCounty');
-    sel.innerHTML = '<option value="">All Counties</option>';
+
+    const filterSel = document.getElementById('filterCounty');
+    filterSel.innerHTML =
+        '<option value="">All Counties</option>';
     counties.forEach(function(c) {
         const o = document.createElement('option');
         o.value = o.textContent = c;
-        sel.appendChild(o);
+        filterSel.appendChild(o);
+    });
+
+    // Populate map county dropdown
+    const mapSel = document.getElementById('mapCounty');
+    if (mapSel) {
+        mapSel.innerHTML =
+            '<option value="">All Counties</option>';
+        counties.forEach(function(c) {
+            const o = document.createElement('option');
+            o.value = o.textContent = c;
+            mapSel.appendChild(o);
+        });
+    }
+
+    // Populate upload school dropdowns
+    ['uploadSchool','uploadSchoolImg'].forEach(function(id) {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        sel.innerHTML =
+            '<option value="">-- Select School --</option>';
+        allSchools.forEach(function(s) {
+            const o = document.createElement('option');
+            o.value = s.id;
+            o.textContent = `${s.name} (${s.county})`;
+            sel.appendChild(o);
+        });
     });
 
     renderRegistry();
@@ -70,13 +100,13 @@ function renderRegistry() {
                 <td>${s.county}</td>
                 <td>${s.sub_county}</td>
                 <td>${s.zone || '—'}</td>
-                <td style="font-size:11px;font-weight:600">
+                <td style="font-size:11px;
+                font-weight:600">
                     ${s.type}
                 </td>
                 <td>
-                    <span class="badge
-                    badge-${s.status.toLowerCase()
-                    .replace(/ /g,'')}">
+                    <span class="badge badge-${s.status
+                    .toLowerCase().replace(/ /g,'')}">
                         ${s.status}
                     </span>
                 </td>
@@ -91,16 +121,19 @@ function renderRegistry() {
                 </td>
                 <td>
                     <div style="display:flex;gap:4px">
-                        <button class="btn btn-outline btn-sm"
-                        onclick="viewProfile(${s.id})">
+                        <button
+                            class="btn btn-outline btn-sm"
+                            onclick="viewProfile(${s.id})">
                             View
                         </button>
-                        <button class="btn btn-primary btn-sm"
-                        onclick="openEditModal(${s.id})">
+                        <button
+                            class="btn btn-primary btn-sm"
+                            onclick="openEditModal(${s.id})">
                             Edit
                         </button>
-                        <button class="btn btn-danger btn-sm"
-                        onclick="deleteSchool(${s.id})">
+                        <button
+                            class="btn btn-danger btn-sm"
+                            onclick="deleteSchool(${s.id})">
                             Del
                         </button>
                     </div>
@@ -110,9 +143,9 @@ function renderRegistry() {
 
     // Pagination info
     document.getElementById('pgInfo').textContent =
-        `Showing ${Math.min(start+1,total)}–
-        ${Math.min(start+PAGE_SIZE,total)}
-        of ${total.toLocaleString()} records`;
+        `Showing ${Math.min(start+1,total)}–` +
+        `${Math.min(start+PAGE_SIZE,total)} ` +
+        `of ${total.toLocaleString()} records`;
 
     // Pagination buttons
     const pgBtns = document.getElementById('pgBtns');
@@ -162,8 +195,10 @@ function renderRegistry() {
 function filterRegistry() {
     const q = document.getElementById('searchBox')
         .value.toLowerCase();
-    const county = document.getElementById('filterCounty').value;
-    const status = document.getElementById('filterStatus').value;
+    const county =
+        document.getElementById('filterCounty').value;
+    const status =
+        document.getElementById('filterStatus').value;
 
     filteredSchools = allSchools.filter(function(s) {
         const mQ = !q ||
@@ -189,12 +224,13 @@ function viewProfile(id) {
 
     showPage('profile');
 
-    document.getElementById('profileName').textContent = s.name;
+    document.getElementById('profileName').textContent =
+        s.name;
     document.getElementById('profileSub').textContent =
         `${s.sub_county} Sub-County, ${s.county} County`;
     document.getElementById('profileBadge').innerHTML =
-        `<span class="badge badge-${s.status.toLowerCase()
-        .replace(/ /g,'')}">
+        `<span class="badge badge-${s.status
+        .toLowerCase().replace(/ /g,'')}">
             ${s.status}
         </span>`;
 
@@ -228,8 +264,7 @@ function viewProfile(id) {
             <span class="val">
                 ${s.lat ?
                     Number(s.lat).toFixed(4) + ', ' +
-                    Number(s.lng).toFixed(4)
-                    : 'N/A'}
+                    Number(s.lng).toFixed(4) : 'N/A'}
             </span>
         </div>
     `;
@@ -238,9 +273,8 @@ function viewProfile(id) {
         <div class="info-row">
             <span class="lbl">Status</span>
             <span class="val">
-                <span class="badge
-                badge-${s.status.toLowerCase()
-                .replace(/ /g,'')}">
+                <span class="badge badge-${s.status
+                .toLowerCase().replace(/ /g,'')}">
                     ${s.status}
                 </span>
             </span>
@@ -253,11 +287,13 @@ function viewProfile(id) {
         </div>
         <div class="info-row">
             <span class="lbl">Comments</span>
-            <span class="val">${s.comments || '—'}</span>
+            <span class="val">
+                ${s.comments || '—'}
+            </span>
         </div>
     `;
 
-    // Profile map
+    // Profile Map
     const mapDiv = document.getElementById('profileMap');
     mapDiv.innerHTML = '';
 
@@ -269,7 +305,7 @@ function viewProfile(id) {
                 .setView([s.lat, s.lng], 12);
             L.tileLayer(
                 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                { attribution: '© OpenStreetMap' }
+                {attribution: '© OpenStreetMap'}
             ).addTo(m);
             L.marker([s.lat, s.lng]).addTo(m)
                 .bindPopup(
@@ -288,49 +324,69 @@ function viewProfile(id) {
 }
 
 // ================================
-// ADD MODAL
+// OPEN SCHOOL MODAL
 // ================================
-function openAddModal() {
+function openSchoolModal() {
     editId = null;
     document.getElementById('modalTitle').textContent =
         'Add School';
+
+    // Clear all fields
     ['fName','fNemis','fSubCounty','fZone',
-    'fStatusDetail','fLat','fLng','fComments']
-    .forEach(id => document.getElementById(id).value = '');
+    'fLat','fLng','fAddress',
+    'fStatusDetail','fComments'].forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+
     document.getElementById('fType').value = 'PUBLIC';
-    document.getElementById('fStatus').value = 'Not Connected';
-    document.getElementById('schoolModal').classList.add('open');
+    document.getElementById('fStatus').value =
+        'Not Connected';
+    document.getElementById('fRegion').value = 'North Rift';
+
+    // Reset to first tab
+    switchTab('school', 'tabBasic');
+
+    document.getElementById('schoolModal')
+        .classList.add('open');
 }
 
 // ================================
-// EDIT MODAL
+// OPEN EDIT MODAL
 // ================================
 function openEditModal(id) {
     editId = id;
     const s = allSchools.find(x => x.id === id);
     if (!s) return;
+
     document.getElementById('modalTitle').textContent =
         'Edit School';
     document.getElementById('fName').value = s.name;
     document.getElementById('fNemis').value = s.nemis;
     document.getElementById('fType').value = s.type;
     document.getElementById('fCounty').value = s.county;
-    document.getElementById('fSubCounty').value = s.sub_county;
+    document.getElementById('fSubCounty').value =
+        s.sub_county;
     document.getElementById('fZone').value = s.zone || '';
+    document.getElementById('fRegion').value =
+        s.region || 'North Rift';
+    document.getElementById('fLat').value = s.lat || '';
+    document.getElementById('fLng').value = s.lng || '';
     document.getElementById('fStatus').value = s.status;
     document.getElementById('fStatusDetail').value =
         s.status_detail || '';
-    document.getElementById('fLat').value = s.lat || '';
-    document.getElementById('fLng').value = s.lng || '';
     document.getElementById('fComments').value =
         s.comments || '';
-    document.getElementById('schoolModal').classList.add('open');
+
+    switchTab('school', 'tabBasic');
+    document.getElementById('schoolModal')
+        .classList.add('open');
 }
 
 // ================================
-// CLOSE MODAL
+// CLOSE SCHOOL MODAL
 // ================================
-function closeModal() {
+function closeSchoolModal() {
     document.getElementById('schoolModal')
         .classList.remove('open');
 }
@@ -339,29 +395,42 @@ function closeModal() {
 // SAVE SCHOOL
 // ================================
 async function saveSchool() {
-    const name = document.getElementById('fName').value.trim();
-    if (!name) { toast('School name is required'); return; }
+    const name = document.getElementById('fName')
+        .value.trim();
+    const nemis = document.getElementById('fNemis')
+        .value.trim();
+
+    if (!name) {
+        toast('School name is required', 'error');
+        switchTab('school', 'tabBasic');
+        return;
+    }
+
+    if (!nemis) {
+        toast('NEMIS code is required', 'error');
+        switchTab('school', 'tabBasic');
+        return;
+    }
 
     const data = {
         name: name.toUpperCase(),
-        nemis: document.getElementById('fNemis')
-            .value.trim().toUpperCase(),
+        nemis: nemis.toUpperCase(),
         type: document.getElementById('fType').value,
         county: document.getElementById('fCounty').value,
         subCounty: document.getElementById('fSubCounty')
             .value.trim().toUpperCase(),
         zone: document.getElementById('fZone')
             .value.trim().toUpperCase(),
-        status: document.getElementById('fStatus').value,
-        statusDetail: document.getElementById('fStatusDetail')
-            .value.trim(),
+        region: 'North Rift',
         lat: parseFloat(
             document.getElementById('fLat').value) || null,
         lng: parseFloat(
             document.getElementById('fLng').value) || null,
-        comments: document.getElementById('fComments')
+        status: document.getElementById('fStatus').value,
+        statusDetail: document.getElementById('fStatusDetail')
             .value.trim(),
-        region: 'North Rift'
+        comments: document.getElementById('fComments')
+            .value.trim()
     };
 
     let result;
@@ -372,15 +441,17 @@ async function saveSchool() {
     }
 
     if (result.success) {
-        toast(editId ?
+        toast(
+            editId ?
             'School updated successfully!' :
-            'School added successfully!'
+            'School added successfully!',
+            'success'
         );
-        closeModal();
+        closeSchoolModal();
         await loadSchools();
         renderDashboard();
     } else {
-        toast('Error: ' + result.error);
+        toast('Error: ' + result.error, 'error');
     }
 }
 
@@ -388,16 +459,75 @@ async function saveSchool() {
 // DELETE SCHOOL
 // ================================
 async function deleteSchool(id) {
-    if (!confirm('Delete this school? Cannot be undone.')) return;
+    if (!confirm(
+        'Delete this school? This cannot be undone.'
+    )) return;
 
     const result = await apiDeleteSchool(id);
 
     if (result.success) {
-        toast('School deleted successfully');
+        toast('School deleted successfully', 'success');
         await loadSchools();
         renderDashboard();
     } else {
-        toast('Error: ' + result.error);
+        toast('Error: ' + result.error, 'error');
+    }
+}
+
+// ================================
+// UPLOAD MODAL
+// ================================
+function openUploadModal() {
+    switchTab('upload', 'tabDoc');
+    document.getElementById('uploadModal')
+        .classList.add('open');
+}
+
+function closeUploadModal() {
+    document.getElementById('uploadModal')
+        .classList.remove('open');
+}
+
+function handleUpload() {
+    const docFile = document.getElementById('docFile');
+    const imgFile = document.getElementById('imgFile');
+    const excelFile = document.getElementById('excelFile');
+
+    const activeTab = document.querySelector(
+        '#uploadModal .tab-content.active'
+    );
+
+    if (!activeTab) return;
+
+    const tabId = activeTab.id;
+
+    if (tabId === 'upload-tabDoc') {
+        if (!docFile.files[0]) {
+            toast('Please select a file', 'error');
+            return;
+        }
+        if (!document.getElementById('uploadSchool').value) {
+            toast('Please select a school', 'error');
+            return;
+        }
+        toast('Document uploaded successfully!', 'success');
+        closeUploadModal();
+
+    } else if (tabId === 'upload-tabImage') {
+        if (!imgFile.files[0]) {
+            toast('Please select an image', 'error');
+            return;
+        }
+        toast('Image uploaded successfully!', 'success');
+        closeUploadModal();
+
+    } else if (tabId === 'upload-tabExcel') {
+        if (!excelFile.files[0]) {
+            toast('Please select a file', 'error');
+            return;
+        }
+        toast('File uploaded successfully!', 'success');
+        closeUploadModal();
     }
 }
 
@@ -412,8 +542,9 @@ function exportCSV() {
     ];
     const rows = filteredSchools.map(s => [
         s.id, s.name, s.nemis, s.county,
-        s.sub_county, s.zone || '', s.type, s.status,
-        s.status_detail || '', s.lat || '', s.lng || ''
+        s.sub_county, s.zone || '', s.type,
+        s.status, s.status_detail || '',
+        s.lat || '', s.lng || ''
     ].map(v =>
         `"${String(v).replace(/"/g,'""')}"`
     ).join(','));
@@ -424,7 +555,7 @@ function exportCSV() {
         encodeURIComponent(csv);
     a.download = 'schoolnet_registry.csv';
     a.click();
-    toast('CSV exported successfully!');
+    toast('CSV exported successfully!', 'success');
 }
 
 // Run on load

@@ -2,28 +2,30 @@
 // REPORTS JS
 // ================================
 
-function renderReports() {
+async function renderReports() {
+    const stats = await fetchStats();
+    if (!stats) return;
 
-    const total = SCHOOLS.length;
-    const connected = SCHOOLS.filter(
-        s => s.status === 'Connected').length;
-    const scheduled = SCHOOLS.filter(
-        s => s.status === 'Scheduled').length;
-    const notConn = SCHOOLS.filter(
-        s => s.status === 'Not Connected').length;
-    const coverage = (connected / total * 100).toFixed(1);
+    const total = Number(stats.total);
+    const connected = Number(stats.connected);
+    const scheduled = Number(stats.scheduled);
+    const notConn = Number(stats.not_connected);
 
     // Summary Stats
     document.getElementById('reportStats').innerHTML = `
         <div class="stat-card">
             <div class="stat-label">Total Schools</div>
-            <div class="stat-value">${total.toLocaleString()}</div>
+            <div class="stat-value">
+                ${total.toLocaleString()}
+            </div>
             <div class="stat-sub">North Rift Region</div>
         </div>
         <div class="stat-card green">
             <div class="stat-label">Connected</div>
             <div class="stat-value">${connected}</div>
-            <div class="stat-sub">${coverage}% coverage</div>
+            <div class="stat-sub">
+                ${(connected/total*100).toFixed(1)}% coverage
+            </div>
         </div>
         <div class="stat-card orange">
             <div class="stat-label">Scheduled</div>
@@ -32,31 +34,26 @@ function renderReports() {
         </div>
         <div class="stat-card red">
             <div class="stat-label">Not Connected</div>
-            <div class="stat-value">${notConn.toLocaleString()}</div>
+            <div class="stat-value">
+                ${notConn.toLocaleString()}
+            </div>
             <div class="stat-sub">Need connectivity</div>
         </div>
     `;
 
-    // County Report Table
-    const counties = [
-        ...new Set(SCHOOLS.map(s => s.county))
-    ].sort();
-
+    // County Table
     document.getElementById('countyReport').innerHTML =
-        counties.map(function(county) {
-            const cs = SCHOOLS.filter(s => s.county === county);
-            const ct = cs.length;
-            const cc = cs.filter(
-                s => s.status === 'Connected').length;
-            const csc = cs.filter(
-                s => s.status === 'Scheduled').length;
-            const cnc = cs.filter(
-                s => s.status === 'Not Connected').length;
-            const cov = (cc / ct * 100).toFixed(1);
+        stats.by_county.map(function(c) {
+            const ct = Number(c.total);
+            const cc = Number(c.connected);
+            const csc = Number(c.scheduled);
+            const cnc = Number(c.not_connected);
+            const cov = ct > 0 ?
+                (cc/ct*100).toFixed(1) : '0.0';
 
             return `
                 <tr>
-                    <td><strong>${county}</strong></td>
+                    <td><strong>${c.county}</strong></td>
                     <td>${ct}</td>
                     <td style="color:var(--success);
                     font-weight:600">${cc}</td>
@@ -76,17 +73,17 @@ function renderReports() {
         }).join('');
 
     // Bar Chart
-    const maxCount = Math.max(...counties.map(c =>
-        SCHOOLS.filter(s => s.county === c).length
-    ));
+    const maxCount = Math.max(
+        ...stats.by_county.map(c => Number(c.total))
+    );
 
     document.getElementById('reportBarChart').innerHTML =
-        counties.map(function(c) {
-            const n = SCHOOLS.filter(s => s.county === c).length;
-            const w = (n / maxCount * 100).toFixed(1);
+        stats.by_county.map(function(c) {
+            const n = Number(c.total);
+            const w = (n/maxCount*100).toFixed(1);
             return `
                 <div class="bar-row">
-                    <div class="bar-label">${c}</div>
+                    <div class="bar-label">${c.county}</div>
                     <div class="bar-track">
                         <div class="bar-fill"
                         style="width:${w}%"></div>
