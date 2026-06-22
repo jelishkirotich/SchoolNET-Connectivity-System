@@ -1,27 +1,22 @@
+# Environment & secrets
+.env
+*.env
+client_secret*.json
+
 # Python
 __pycache__/
-*.py[cod]
-*.pyo
-.env
+*.pyc
+.venv/
 venv/
-env/
 
-# Database
-*.sql
-*.db
-*.sqlite
+# Uploaded files (real institution documents/images - not for git)
+static/uploads/*
+!static/uploads/.gitkeep
 
-# Node
-node_modules/
-
-# OS Files
+# OS junk
 .DS_Store
 Thumbs.db
 desktop.ini
-
-# Uploads
-uploads/school-images/*
-uploads/documents/*
 
 # Logs
 *.log
