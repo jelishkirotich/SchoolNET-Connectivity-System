@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SchoolNET | Dashboard</title>
+    <link rel="stylesheet" href="../static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+</head>
+<body>
+<div class="app-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>🛡️ SchoolNET</h1>
+            <p>Connectivity Monitoring</p>
+        </div>
+        <div class="sidebar-nav">
+            <div class="nav-section-label">Main</div>
+            <a class="nav-link active" onclick="showPage('dashboard')">📊 Dashboard</a>
+            <a class="nav-link" onclick="showPage('registry')">🏫 Institutions</a>
+            <a class="nav-link" onclick="showPage('map')">🗺️ GIS Map</a>
+            <a class="nav-link" onclick="showPage('issues')">⚠️ Issue Reports</a>
+
+            <div class="nav-section-label">Analysis</div>
+            <a class="nav-link" onclick="showPage('reports')">📄 Reports</a>
+
+            <div class="nav-section-label" id="adminSectionLabel" style="display:none">Administration</div>
+            <a class="nav-link" id="navAdmin" onclick="showPage('admin')" style="display:none">👤 User Management</a>
+            <a class="nav-link" id="navAuditLog" onclick="showPage('auditlog')" style="display:none">📋 Audit Log</a>
+        </div>
+        <div class="nav-footer">
+            <a class="nav-link" onclick="doLogout()">🚪 Sign Out</a>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main-content">
+        <header class="topbar">
+            <h2 id="pageTitle">Dashboard</h2>
+            <div class="topbar-right">
+                <span class="role-pill" id="userRolePill"></span>
+                <span id="userNameLabel"></span>
+                <div class="user-avatar" id="userAvatar">--</div>
+            </div>
+        </header>
+
+        <div class="page-content">
+
+            <!-- ======================== DASHBOARD ======================== -->
+            <div class="page active" id="page-dashboard">
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card"><div class="stat-label">Loading...</div><div class="stat-value">...</div></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header"><h3>Institutions by County</h3></div>
+                    <div style="padding:20px" id="countyChart"></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header"><h3>Recent Institutions</h3></div>
+                    <table>
+                        <thead><tr><th>#</th><th>Name</th><th>County</th><th>Sub-County</th><th>NEMIS</th><th>Status</th><th>Last Verified</th></tr></thead>
+                        <tbody id="recentTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ======================== INSTITUTIONS REGISTRY ======================== -->
+            <div class="page" id="page-registry">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>All Institutions</h3>
+                        <div class="panel-toolbar">
+                            <input type="text" id="searchBox" placeholder="Search name or NEMIS..." oninput="filterRegistry()">
+                            <select id="filterCounty" onchange="filterRegistry()"><option value="">All Counties</option></select>
+                            <select id="filterStatus" onchange="filterRegistry()">
+                                <option value="">All Statuses</option>
+                                <option>Connected</option><option>Scheduled</option><option>Not Connected</option>
+                            </select>
+                            <button class="btn btn-primary" id="btnAddInstitution" onclick="openInstitutionModal()">+ Add Institution</button>
+                            <button class="btn btn-outline" id="btnUploadFile" onclick="openUploadModal()">📁 Upload File</button>
+                            <button class="btn btn-outline" onclick="exportCSV()">⬇ Export CSV</button>
+                        </div>
+                    </div>
+                    <div style="overflow-x:auto">
+                        <table>
+                            <thead>
+                                <tr><th>#</th><th>Name</th><th>NEMIS</th><th>County</th><th>Sub-County</th><th>Status</th><th>Freshness</th><th>Actions</th></tr>
+                            </thead>
+                            <tbody id="registryBody"></tbody>
+                        </table>
+                        <div id="noResults" class="no-results" style="display:none">No institutions match your search.</div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--border);font-family:'Segoe UI',sans-serif;font-size:12px;color:var(--text-muted)">
+                        <span id="pgInfo"></span>
+                        <div id="pgBtns" style="display:flex;gap:4px"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ======================== INSTITUTION PROFILE ======================== -->
+            <div class="page" id="page-profile">
+                <button class="btn btn-outline" style="margin-bottom:16px" onclick="showPage('registry')">← Back to Institutions</button>
+                <div class="panel" style="padding:24px">
+                    <h2 id="profileName" style="font-size:20px"></h2>
+                    <p id="profileSub" style="color:var(--text-muted);font-family:'Segoe UI',sans-serif;font-size:13px;margin-top:4px"></p>
+                    <div id="profileBadge" style="margin-top:10px"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px">
+                    <div class="panel" style="padding:20px"><h4 style="font-size:12px;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px">Details</h4><div id="profileDetails"></div></div>
+                    <div class="panel" style="padding:20px"><h4 style="font-size:12px;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px">Status Timeline</h4><div class="timeline" id="profileTimeline"></div></div>
+                    <div class="panel" style="padding:20px;grid-column:1/-1"><h4 style="font-size:12px;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px">Location</h4><div id="profileMap" style="height:280px;border-radius:6px;overflow:hidden"></div></div>
+                    <div class="panel" style="padding:20px;grid-column:1/-1">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                            <h4 style="font-size:12px;text-transform:uppercase;color:var(--text-muted)">Reported Issues</h4>
+                            <button class="btn btn-accent btn-sm" onclick="openIssueModal()">+ Report Issue</button>
+                        </div>
+                        <div id="profileIssues"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ======================== GIS MAP ======================== -->
+            <div class="page" id="page-map">
+                <div class="panel" style="padding:16px 20px;margin-bottom:18px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;font-family:'Segoe UI',sans-serif">
+                    <div class="form-group" style="margin:0">
+                        <label>County</label>
+                        <select id="mapCounty" onchange="renderMap()"><option value="">All Counties</option></select>
+                    </div>
+                    <div class="form-group" style="margin:0">
+                        <label>Status</label>
+                        <select id="mapStatus" onchange="renderMap()">
+                            <option value="">All Statuses</option><option>Connected</option><option>Scheduled</option><option>Not Connected</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="renderMap()">Apply</button>
+                    <span id="mapCount" style="font-size:12px;color:var(--text-muted);align-self:center"></span>
+                </div>
+                <div id="mapContainer" style="height:560px;border-radius:6px;border:1px solid var(--border)"></div>
+            </div>
+
+            <!-- ======================== ISSUE REPORTS ======================== -->
+            <div class="page" id="page-issues">
+                <div class="panel">
+                    <div class="panel-header"><h3>Connectivity Issue Reports</h3></div>
+                    <table>
+                        <thead><tr><th>#</th><th>Institution</th><th>Title</th><th>Severity</th><th>Status</th><th>Reported By</th><th>Date</th><th>Action</th></tr></thead>
+                        <tbody id="issuesTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ======================== REPORTS ======================== -->
+            <div class="page" id="page-reports">
+                <div class="stats-grid" id="reportStats" style="margin-bottom:22px"></div>
+                <div class="panel">
+                    <div class="panel-header"><h3>County Coverage</h3><button class="btn btn-primary" onclick="exportCSV()">⬇ Export CSV</button></div>
+                    <table>
+                        <thead><tr><th>County</th><th>Total</th><th>Connected</th><th>Scheduled</th><th>Not Connected</th><th>Coverage</th></tr></thead>
+                        <tbody id="countyReport"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ======================== ADMIN: USER MANAGEMENT ======================== -->
+            <div class="page" id="page-admin">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>User Management</h3>
+                        <button class="btn btn-primary" onclick="openUserModal()">+ Add User</button>
+                    </div>
+                    <table>
+                        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Login Method</th><th>Actions</th></tr></thead>
+                        <tbody id="usersTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ======================== AUDIT LOG ======================== -->
+            <div class="page" id="page-auditlog">
+                <div class="panel">
+                    <div class="panel-header"><h3>System Audit Log</h3></div>
+                    <div id="auditLogList" style="padding:16px 20px;font-family:'Segoe UI',sans-serif"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- INSTITUTION MODAL -->
+<div class="modal-bg" id="institutionModal">
+    <div class="modal">
+        <div class="modal-header"><h3 id="institutionModalTitle">Add Institution</h3><button class="modal-close" onclick="closeInstitutionModal()">×</button></div>
+        <div class="modal-body">
+
+            <div class="modal-tabs">
+                <button class="modal-tab active" id="instTabBasic" onclick="switchModalTab('inst', 'instTabBasic')">Basic Info</button>
+                <button class="modal-tab" id="instTabNetwork" onclick="switchModalTab('inst', 'instTabNetwork')">Network</button>
+                <button class="modal-tab" id="instTabEquipment" onclick="switchModalTab('inst', 'instTabEquipment')">Equipment</button>
+            </div>
+
+            <div class="tab-content active" id="inst-instTabBasic">
+                <div class="form-grid">
+                    <div class="form-group full"><label>Institution Name *</label><input type="text" id="fName"></div>
+                    <div class="form-group"><label>NEMIS Code *</label><input type="text" id="fNemis"></div>
+                    <div class="form-group"><label>Type</label><select id="fType"><option>PUBLIC</option><option>PRIVATE</option></select></div>
+                    <div class="form-group"><label>County *</label>
+                        <select id="fCounty">
+                            <option>Turkana</option><option>West Pokot</option><option>Nandi</option>
+                            <option>Trans Nzoia</option><option>Uasin Gishu</option><option>Elgeyo Marakwet</option><option>Baringo</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Sub-County *</label><input type="text" id="fSubCounty"></div>
+                    <div class="form-group"><label>Constituency</label><input type="text" id="fConstituency"></div>
+                    <div class="form-group"><label>Ward</label><input type="text" id="fWard"></div>
+                    <div class="form-group"><label>Zone</label><input type="text" id="fZone"></div>
+                    <div class="form-group"><label>Category</label><input type="text" id="fCategory" placeholder="e.g. JSS"></div>
+                    <div class="form-group"><label>Project</label><input type="text" id="fProject" placeholder="e.g. DSH II"></div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="inst-instTabNetwork">
+                <div class="form-grid">
+                    <div class="form-group"><label>Latitude</label><input type="text" id="fLat"></div>
+                    <div class="form-group"><label>Longitude</label><input type="text" id="fLng"></div>
+                    <div class="form-group"><label>IP Address</label><input type="text" id="fIpAddress" placeholder="e.g. 10.16.74.23"></div>
+                    <div class="form-group"><label>No. of Access Points</label><input type="text" id="fNoAP" placeholder="0"></div>
+                    <div class="form-group"><label>Status</label>
+                        <select id="fStatus"><option>Not Connected</option><option>Scheduled</option><option>Connected</option><option>Unknown</option></select>
+                    </div>
+                    <div class="form-group"><label>Status Detail</label><input type="text" id="fStatusDetail"></div>
+                    <div class="form-group full"><label>Comments</label><textarea id="fComments" rows="2"></textarea></div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="inst-instTabEquipment">
+                <div id="equipmentList" style="margin-bottom:16px"></div>
+                <div class="form-grid" id="equipmentForm" style="display:none;border-top:1px solid var(--border);padding-top:16px">
+                    <div class="form-group"><label>Equipment Type</label>
+                        <select id="eqType"><option>Switch</option><option>Access Point</option><option>Router</option><option>UPS</option><option>Transmission Link</option></select>
+                    </div>
+                    <div class="form-group"><label>Model / OEM</label><input type="text" id="eqModel"></div>
+                    <div class="form-group"><label>Serial No.</label><input type="text" id="eqSerial"></div>
+                    <div class="form-group"><label>Notes</label><input type="text" id="eqNotes"></div>
+                </div>
+                <button class="btn btn-outline btn-sm" id="btnAddEquipment" onclick="showEquipmentForm()" disabled>+ Add Equipment</button>
+                <button class="btn btn-primary btn-sm" id="btnSaveEquipment" style="display:none" onclick="addEquipmentItem()">Save Item</button>
+                <p id="equipmentHint" style="font-size:11px;color:var(--text-muted);margin-top:8px;font-family:'Segoe UI',sans-serif">
+                    Save the institution first to add equipment.
+                </p>
+            </div>
+
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeInstitutionModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveInstitution()">Save Institution</button>
+        </div>
+    </div>
+</div>
+
+<!-- ISSUE MODAL -->
+<div class="modal-bg" id="issueModal">
+    <div class="modal">
+        <div class="modal-header"><h3>Report Connectivity Issue</h3><button class="modal-close" onclick="closeIssueModal()">×</button></div>
+        <div class="modal-body">
+            <div class="form-grid">
+                <div class="form-group full"><label>Title *</label><input type="text" id="issueTitle" placeholder="e.g. Equipment not installed"></div>
+                <div class="form-group"><label>Severity</label>
+                    <select id="issueSeverity"><option>Low</option><option selected>Medium</option><option>High</option><option>Critical</option></select>
+                </div>
+                <div class="form-group full"><label>Description</label><textarea id="issueDescription" rows="4" placeholder="Describe the issue in detail"></textarea></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeIssueModal()">Cancel</button>
+            <button class="btn btn-accent" onclick="saveIssue()">Submit Report</button>
+        </div>
+    </div>
+</div>
+
+<!-- UPLOAD MODAL -->
+<div class="modal-bg" id="uploadModal">
+    <div class="modal">
+        <div class="modal-header"><h3>Upload File</h3><button class="modal-close" onclick="closeUploadModal()">×</button></div>
+        <div class="modal-body">
+            <div class="form-grid">
+                <div class="form-group full"><label>Institution</label>
+                    <select id="uploadInstitution"><option value="">-- Select Institution --</option></select>
+                </div>
+                <div class="form-group full"><label>Choose File (PDF, DOC, JPG, PNG, XLSX, CSV)</label>
+                    <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.csv">
+                </div>
+                <div class="form-group full"><label>Description</label><textarea id="fileDescription" rows="2"></textarea></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeUploadModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="handleFileUpload()">Upload</button>
+        </div>
+    </div>
+</div>
+
+<!-- USER MODAL (Admin only) -->
+<div class="modal-bg" id="userModal">
+    <div class="modal">
+        <div class="modal-header"><h3>Add User</h3><button class="modal-close" onclick="closeUserModal()">×</button></div>
+        <div class="modal-body">
+            <div class="form-grid">
+                <div class="form-group full"><label>Full Name *</label><input type="text" id="uName"></div>
+                <div class="form-group"><label>Email *</label><input type="email" id="uEmail"></div>
+                <div class="form-group"><label>Password *</label><input type="password" id="uPassword"></div>
+                <div class="form-group full"><label>Role</label>
+                    <select id="uRole"><option value="user">User</option><option value="management">Management</option><option value="admin">Admin</option></select>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeUserModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveUser()">Save User</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+
+<script src="../static/js/api.js"></script>
+<script src="../static/js/app.js"></script>
+<script src="../static/js/dashboard.js"></script>
+<script src="../static/js/registry.js"></script>
+<script src="../static/js/map.js"></script>
+<script src="../static/js/issues.js"></script>
+<script src="../static/js/reports.js"></script>
+<script src="../static/js/admin.js"></script>
+
+</body>
+</html>

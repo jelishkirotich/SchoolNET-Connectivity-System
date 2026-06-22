@@ -20,7 +20,7 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-fallback-key')
-CORS(app, supports_credentials=True)
+CORS(app, supports_credentials=True, origin=['http://127.0.0.1:5500'])
 
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -345,13 +345,17 @@ def add_institution():
         cursor = db.cursor()
         cursor.execute('''
             INSERT INTO institutions
-            (region, county, sub_county, zone, nemis, name, type,
+            (region, county, sub_county, constituency, ward, zone, nemis, name, type,
+            category, project, ip_address, no_of_access_points,
             lat, lng, status, status_detail, comments)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
         ''', (
             data.get('region', 'North Rift'), data.get('county'),
-            data.get('subCounty'), data.get('zone'), data.get('nemis'),
+            data.get('subCounty'), data.get('constituency'), data.get('ward'),
+            data.get('zone'), data.get('nemis'),
             data.get('name'), data.get('type', 'PUBLIC'),
+            data.get('category'), data.get('project'),
+            data.get('ipAddress'), data.get('noOfAccessPoints', 0),
             data.get('lat'), data.get('lng'),
             data.get('status'), data.get('statusDetail'), data.get('comments')
         ))
@@ -394,17 +398,19 @@ def update_institution(id):
 
         cursor.execute('''
             UPDATE institutions SET
-            region=%s, county=%s, sub_county=%s, zone=%s, nemis=%s,
-            name=%s, type=%s, lat=%s, lng=%s, status=%s,
+            region=%s, county=%s, sub_county=%s, constituency=%s, ward=%s, zone=%s, nemis=%s,
+            name=%s, type=%s, category=%s, project=%s, ip_address=%s, no_of_access_points=%s,
+            lat=%s, lng=%s, status=%s,
             status_detail=%s, comments=%s, last_verified_at=NOW()
             WHERE id=%s
         ''', (
             data.get('region', 'North Rift'), data.get('county'),
-            data.get('subCounty'), data.get('zone'), data.get('nemis'),
-            data.get('name'), data.get('type'), data.get('lat'), data.get('lng'),
+            data.get('subCounty'), data.get('constituency'), data.get('ward'), data.get('zone'), data.get('nemis'),
+            data.get('name'), data.get('type'), data.get('category'), data.get('project'),
+            data.get('ipAddress'), data.get('noOfAccessPoints', 0),
+            data.get('lat'), data.get('lng'),
             new_status, data.get('statusDetail'), data.get('comments'), id
         ))
-
         if old_status != new_status:
             cursor.execute('''
                 INSERT INTO status_history (institution_id, old_status, new_status, changed_by)
@@ -798,6 +804,65 @@ def public_institutions():
 # ================================
 # RUN APP
 # ================================
+
+# ================================
+# EQUIPMENT INVENTORY (User + Admin can manage)
+# ================================
+@app.route('/api/equipment/<int:institution_id>', methods=['GET'])
+@login_required
+def get_equipment(institution_id):
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            'SELECT * FROM equipment_inventory WHERE institution_id=%s ORDER BY installed_at DESC',
+            (institution_id,)
+        )
+        equipment = cursor.fetchall()
+        db.close()
+        return jsonify({'success': True, 'data': equipment})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/equipment', methods=['POST'])
+@role_required('admin', 'user')
+def add_equipment():
+    try:
+        data = request.get_json()
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('''
+            INSERT INTO equipment_inventory
+            (institution_id, equipment_type, model_oem, serial_no, notes)
+            VALUES (%s,%s,%s,%s,%s)
+        ''', (
+            data.get('institutionId'), data.get('equipmentType'),
+            data.get('modelOem'), data.get('serialNo'), data.get('notes')
+        ))
+        db.commit()
+        new_id = cursor.lastrowid
+        db.close()
+
+        log_action(f"Added equipment: {data.get('equipmentType')} to institution #{data.get('institutionId')}", session['email'])
+
+        return jsonify({'success': True, 'message': 'Equipment added', 'id': new_id})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/equipment/<int:id>', methods=['DELETE'])
+@role_required('admin', 'user')
+def delete_equipment(id):
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('DELETE FROM equipment_inventory WHERE id=%s', (id,))
+        db.commit()
+        db.close()
+        log_action(f"Removed equipment #{id}", session['email'])
+        return jsonify({'success': True, 'message': 'Equipment removed'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)    
     

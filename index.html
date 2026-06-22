@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SchoolNET | Sign In</title>
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+
+<div class="auth-page">
+    <div class="auth-box">
+
+        <div class="auth-header">
+            <div class="crest">🛡️</div>
+            <h1>SchoolNET</h1>
+            <p>Connectivity Planning & Monitoring</p>
+        </div>
+
+        <div class="auth-body">
+
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">
+                    Sign In
+                </button>
+                <button class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">
+                    Create Account
+                </button>
+            </div>
+
+            <!-- LOGIN FORM -->
+            <div id="loginForm">
+                <div class="auth-field">
+                    <label>Email Address</label>
+                    <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email">
+                </div>
+                <div class="auth-field">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password">
+                </div>
+
+                <div class="auth-error" id="loginError"></div>
+
+                <button class="btn-auth-primary" id="loginBtn" onclick="handleLogin()">
+                    Sign In
+                </button>
+
+                <div class="auth-divider">or</div>
+
+                <button class="btn-google" onclick="handleGoogleLogin()">
+                    <span>🔵</span> Continue with Google
+                </button>
+            </div>
+
+            <!-- SIGNUP FORM -->
+            <div id="signupForm" style="display:none">
+                <div class="auth-field">
+                    <label>Full Name</label>
+                    <input type="text" id="signupName" placeholder="e.g. Jane Doe" autocomplete="name">
+                </div>
+                <div class="auth-field">
+                    <label>Email Address</label>
+                    <input type="email" id="signupEmail" placeholder="you@example.com" autocomplete="email">
+                </div>
+                <div class="auth-field">
+                    <label>Password</label>
+                    <input type="password" id="signupPassword" placeholder="At least 6 characters" autocomplete="new-password">
+                </div>
+
+                <div class="auth-error" id="signupError"></div>
+
+                <button class="btn-auth-primary" id="signupBtn" onclick="handleSignup()">
+                    Create Account
+                </button>
+
+                <div class="auth-divider">or</div>
+
+                <button class="btn-google" onclick="handleGoogleLogin()">
+                    <span>🔵</span> Continue with Google
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="static/js/api.js"></script>
+<script src="static/js/auth.js"></script>
+
+</body>
+</html>
