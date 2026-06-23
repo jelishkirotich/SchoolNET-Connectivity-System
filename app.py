@@ -115,39 +115,51 @@ def signup():
         data = request.get_json()
         name = data.get('name', '').strip()
         email = data.get('email', '').strip().lower()
+        username = data.get('username', '').strip().lower()
         password = data.get('password', '')
 
-        if not name or not email or not password:
-            return jsonify({'success': False, 'error': 'All fields are required'}), 400
+        if not name or not password:
+            return jsonify({'success': False, 'error': 'Name and password are required'}), 400
+        if not email and not username:
+            return jsonify({'success': False, 'error': 'Provide an email or a username'}), 400
         if len(password) < 6:
             return jsonify({'success': False, 'error': 'Password must be at least 6 characters'}), 400
 
         db = get_db()
         cursor = db.cursor()
-        cursor.execute('SELECT id FROM users WHERE email=%s', (email,))
-        if cursor.fetchone():
-            db.close()
-            return jsonify({'success': False, 'error': 'An account with this email already exists'}), 409
+
+        if email:
+            cursor.execute('SELECT id FROM users WHERE email=%s', (email,))
+            if cursor.fetchone():
+                db.close()
+                return jsonify({'success': False, 'error': 'An account with this email already exists'}), 409
+
+        if username:
+            cursor.execute('SELECT id FROM users WHERE username=%s', (username,))
+            if cursor.fetchone():
+                db.close()
+                return jsonify({'success': False, 'error': 'This username is already taken'}), 409
 
         password_hash = generate_password_hash(password)
         cursor.execute('''
-            INSERT INTO users (name, email, password_hash, auth_provider, role, status)
-            VALUES (%s,%s,%s,'email','user','Active')
-        ''', (name, email, password_hash))
+            INSERT INTO users (name, email, username, password_hash, auth_provider, role, status)
+            VALUES (%s,%s,%s,%s,'email','user','Active')
+        ''', (name, email or None, username or None, password_hash))
         db.commit()
         new_id = cursor.lastrowid
         db.close()
 
-        log_action(f"New user signed up: {email}", email)
+        identifier = email or username
+        log_action(f"New user signed up: {identifier}", identifier)
 
         session['user_id'] = new_id
-        session['email'] = email
+        session['email'] = identifier
         session['name'] = name
         session['role'] = 'user'
 
         return jsonify({
             'success': True,
-            'user': {'id': new_id, 'name': name, 'email': email, 'role': 'user'}
+            'user': {'id': new_id, 'name': name, 'email': identifier, 'role': 'user'}
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -159,34 +171,34 @@ def signup():
 def login():
     try:
         data = request.get_json()
-        email = data.get('email', '').strip().lower()
+        identifier = data.get('identifier', '').strip().lower()
         password = data.get('password', '')
 
         db = get_db()
         cursor = db.cursor()
-        cursor.execute('SELECT * FROM users WHERE email=%s AND status="Active"', (email,))
+        cursor.execute('''
+            SELECT * FROM users
+            WHERE (email=%s OR username=%s) AND status="Active"
+        ''', (identifier, identifier))
         user = cursor.fetchone()
         db.close()
 
         if not user or not user['password_hash']:
-            return jsonify({'success': False, 'error': 'Invalid email or password'}), 401
+            return jsonify({'success': False, 'error': 'Invalid login credentials'}), 401
 
         if not check_password_hash(user['password_hash'], password):
-            return jsonify({'success': False, 'error': 'Invalid email or password'}), 401
+            return jsonify({'success': False, 'error': 'Invalid login credentials'}), 401
 
         session['user_id'] = user['id']
-        session['email'] = user['email']
+        session['email'] = user['email'] or user['username']
         session['name'] = user['name']
         session['role'] = user['role']
 
-        log_action(f"User logged in: {email}", email)
+        log_action(f"User logged in: {identifier}", identifier)
 
         return jsonify({
             'success': True,
-            'user': {
-                'id': user['id'], 'name': user['name'],
-                'email': user['email'], 'role': user['role']
-            }
+            'user': {'id': user['id'], 'name': user['name'], 'email': session['email'], 'role': user['role']}
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -247,8 +259,10 @@ def google_callback():
 
         log_action(f"User logged in via Google: {email}", email)
 
-        return redirect('http://127.0.0.1:5500/pages/dashboard.html')
+        return redirect('http://127.0.0.1:5500/templates/dashboard.html')
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return redirect(f'http://127.0.0.1:5500/index.html?error={str(e)}')
 
 # ================================

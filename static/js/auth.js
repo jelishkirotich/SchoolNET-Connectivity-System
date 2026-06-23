@@ -10,15 +10,15 @@ function switchAuthTab(which) {
 }
 
 async function handleLogin() {
-    const email = document.getElementById('loginEmail').value.trim();
+    const identifier = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
     const errEl = document.getElementById('loginError');
     const btn = document.getElementById('loginBtn');
 
     errEl.style.display = 'none';
 
-    if (!email || !password) {
-        errEl.textContent = 'Please enter your email and password';
+    if (!identifier || !password) {
+        errEl.textContent = 'Please enter your email/username and password';
         errEl.style.display = 'block';
         return;
     }
@@ -26,12 +26,12 @@ async function handleLogin() {
     btn.textContent = 'Signing in...';
     btn.disabled = true;
 
-    const result = await apiPost('/api/auth/login', { email, password });
+    const result = await apiPost('/api/auth/login', { identifier, password });
 
     if (result.success) {
         window.location.href = 'templates/dashboard.html';
     } else {
-        errEl.textContent = result.error || 'Invalid email or password';
+        errEl.textContent = result.error || 'Invalid login credentials';
         errEl.style.display = 'block';
         btn.textContent = 'Sign In';
         btn.disabled = false;
@@ -41,14 +41,20 @@ async function handleLogin() {
 async function handleSignup() {
     const name = document.getElementById('signupName').value.trim();
     const email = document.getElementById('signupEmail').value.trim();
+    const username = document.getElementById('signupUsername').value.trim();
     const password = document.getElementById('signupPassword').value;
     const errEl = document.getElementById('signupError');
     const btn = document.getElementById('signupBtn');
 
     errEl.style.display = 'none';
 
-    if (!name || !email || !password) {
-        errEl.textContent = 'All fields are required';
+    if (!name || !password) {
+        errEl.textContent = 'Name and password are required';
+        errEl.style.display = 'block';
+        return;
+    }
+    if (!email && !username) {
+        errEl.textContent = 'Provide an email address or choose a username';
         errEl.style.display = 'block';
         return;
     }
@@ -61,7 +67,7 @@ async function handleSignup() {
     btn.textContent = 'Creating account...';
     btn.disabled = true;
 
-    const result = await apiPost('/api/auth/signup', { name, email, password });
+    const result = await apiPost('/api/auth/signup', { name, email, username, password });
 
     if (result.success) {
         window.location.href = 'templates/dashboard.html';

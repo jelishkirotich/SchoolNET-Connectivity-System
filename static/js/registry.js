@@ -175,6 +175,23 @@ async function viewProfile(id) {
 
     window.currentProfileInstitutionId = id;
 
+    // Load files for this institution
+    const filesResult = await apiGet(`/api/files/${id}`);
+    const filesDiv = document.getElementById('profileFiles');
+    if (filesResult.success && filesResult.data.length > 0) {
+        filesDiv.innerHTML = filesResult.data.map(f => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-family:'Segoe UI',sans-serif;font-size:12.5px">
+                <div>
+                    <strong>${f.filename}</strong>
+                    <div style="font-size:11px;color:var(--text-muted)">${f.description || 'No description'} — uploaded by ${f.uploaded_by}</div>
+                </div>
+                <span style="font-size:11px;color:var(--text-muted)">${new Date(f.uploaded_at).toLocaleDateString()}</span>
+            </div>
+        `).join('');
+    } else {
+        filesDiv.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);font-family:Segoe UI,sans-serif">No files uploaded yet.</p>';
+    }
+
     // Mini map
     const mapDiv = document.getElementById('profileMap');
     mapDiv.innerHTML = '';
@@ -343,6 +360,7 @@ async function handleFileUpload() {
     if (result.success) {
         toast('File uploaded successfully: ' + result.filename, 'success');
         closeUploadModal();
+        if (window.currentProfileInstitutionId) viewProfile(window.currentProfileInstitutionId);
     } else {
         toast('Upload failed: ' + result.error, 'error');
     }
