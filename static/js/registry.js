@@ -58,7 +58,7 @@ function renderRegistry() {
 
     document.getElementById('noResults').style.display = total === 0 ? 'block' : 'none';
 
-    const canEdit = CURRENT_USER.role === 'admin' || CURRENT_USER.role === 'user';
+    const canEdit = (CURRENT_USER.permissions && CURRENT_USER.permissions.can_manage_institutions) || CURRENT_USER.role === 'admin' || CURRENT_USER.role === 'management';
     const canDelete = CURRENT_USER.role === 'admin';
 
     document.getElementById('registryBody').innerHTML = pageData.map(inst => `
@@ -105,7 +105,8 @@ function renderRegistry() {
 function filterRegistry() {
     const q = document.getElementById('searchBox').value.toLowerCase();
     const county = document.getElementById('filterCounty').value;
-    const status = document.getElementById('filterStatus').value;
+    const statusSelect = document.getElementById('filterStatus');
+    const status = statusSelect ? statusSelect.value : '';
 
     filteredInstitutions = allInstitutions.filter(inst => {
         const mQ = !q || inst.name.toLowerCase().includes(q) || inst.nemis.toLowerCase().includes(q);
@@ -214,21 +215,18 @@ function openInstitutionModal(id) {
     document.getElementById('institutionModalTitle').textContent = id ? 'Edit Institution' : 'Add Institution';
     switchModalTab('inst', 'instTabBasic');
 
-    const eqBtn = document.getElementById('btnAddEquipment');
-    const eqHint = document.getElementById('equipmentHint');
-
     if (id) {
         const inst = allInstitutions.find(x => x.id === id);
         if (!inst) return;
         document.getElementById('fName').value = inst.name;
         document.getElementById('fNemis').value = inst.nemis;
-        document.getElementById('fType').value = inst.type;
+        document.getElementById('fType').value = inst.type || 'Public';
         document.getElementById('fCounty').value = inst.county;
         document.getElementById('fSubCounty').value = inst.sub_county;
         document.getElementById('fConstituency').value = inst.constituency || '';
         document.getElementById('fWard').value = inst.ward || '';
         document.getElementById('fZone').value = inst.zone || '';
-        document.getElementById('fCategory').value = inst.category || '';
+        document.getElementById('fCategory').value = inst.category || 'School';
         document.getElementById('fProject').value = inst.project || '';
         document.getElementById('fLat').value = inst.lat || '';
         document.getElementById('fLng').value = inst.lng || '';
@@ -237,19 +235,12 @@ function openInstitutionModal(id) {
         document.getElementById('fStatus').value = inst.status;
         document.getElementById('fStatusDetail').value = inst.status_detail || '';
         document.getElementById('fComments').value = inst.comments || '';
-
-        eqBtn.disabled = false;
-        eqHint.style.display = 'none';
-        loadEquipmentList(id);
     } else {
         ['fName','fNemis','fSubCounty','fConstituency','fWard','fZone','fCategory','fProject',
          'fLat','fLng','fIpAddress','fNoAP','fStatusDetail','fComments'].forEach(i => document.getElementById(i).value = '');
-        document.getElementById('fType').value = 'PUBLIC';
+        document.getElementById('fType').value = 'Public';
+        document.getElementById('fCategory').value = 'School';
         document.getElementById('fStatus').value = 'Not Connected';
-
-        eqBtn.disabled = true;
-        eqHint.style.display = 'block';
-        document.getElementById('equipmentList').innerHTML = '';
     }
 
     document.getElementById('institutionModal').classList.add('open');
@@ -296,8 +287,12 @@ async function saveInstitution() {
     if (result.success) {
         toast(editId ? 'Institution updated' : 'Institution added', 'success');
         closeInstitutionModal();
-        await loadRegistry();
-        renderDashboard();
+        if (data.ipAddress) {
+            await triggerAutoMonitoring();
+        } else {
+            await loadRegistry();
+            renderDashboard();
+        }
     } else {
         toast('Error: ' + result.error, 'error');
     }
@@ -323,9 +318,38 @@ function exportCSV() {
     const csv = [headers.join(','), ...rows].join('\n');
     const a = document.createElement('a');
     a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-    a.download = 'schoolnet_institutions.csv';
+    a.download = 'institution_connectivity_monitoring.csv';
     a.click();
     toast('CSV exported', 'success');
+}
+
+function openImportModal() {
+    document.getElementById('importModal').classList.add('open');
+}
+
+function closeImportModal() {
+    document.getElementById('importModal').classList.remove('open');
+    document.getElementById('importFileInput').value = '';
+}
+
+async function handleBulkImport() {
+    const importFile = document.getElementById('importFileInput');
+    if (!importFile.files[0]) {
+        toast('Please choose a CSV file', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', importFile.files[0]);
+    const result = await apiImportInstitutions(formData);
+
+    if (result.success) {
+        toast(`Import completed: ${result.imported} added, ${result.updated} updated`, 'success');
+        closeImportModal();
+        await triggerAutoMonitoring();
+    } else {
+        toast('Import failed: ' + result.error, 'error');
+    }
 }
 
 // ================================
@@ -366,20 +390,63 @@ async function handleFileUpload() {
     }
 }
 
+async function renderIpStatusMonitor() {
+    const result = await apiGet('/api/institutions/ip-status');
+    const tbody = document.getElementById('ipStatusTable');
+    if (!tbody) return;
+
+    if (!result.success) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--status-not-connected)">${result.error || 'Unable to load IP monitor.'}</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = (result.data || []).map((inst, idx) => `
+        <tr>
+            <td style="color:var(--text-muted)">${idx + 1}</td>
+            <td><strong>${inst.name}</strong></td>
+            <td>${inst.county || '—'}</td>
+            <td>${inst.sub_county || '—'}</td>
+            <td><code>${inst.ip_address || '—'}</code></td>
+            <td><span class="badge badge-${inst.status.toLowerCase().replace(/ /g,'')}">${inst.status}</span></td>
+            <td>${getFreshnessHtml(inst.last_verified_at)}</td>
+            <td>${inst.status_detail || '—'}</td>
+        </tr>
+    `).join('');
+}
+
+async function triggerAutoMonitoring() {
+    const result = await apiRunMonitor();
+    if (result.success) {
+        toast('Connectivity scan completed', 'success');
+        await loadRegistry();
+        renderDashboard();
+        renderIpStatusMonitor();
+    } else {
+        toast('Monitoring failed: ' + result.error, 'error');
+    }
+}
+
 // Load registry on script load (dashboard.html includes this script on every load)
 loadRegistry();
 // ================================
 // EQUIPMENT INVENTORY
 // ================================
 function showEquipmentForm() {
-    document.getElementById('equipmentForm').style.display = 'grid';
-    document.getElementById('btnSaveEquipment').style.display = 'inline-flex';
-    document.getElementById('btnAddEquipment').style.display = 'none';
+    const form = document.getElementById('equipmentForm');
+    const saveBtn = document.getElementById('btnSaveEquipment');
+    const addBtn = document.getElementById('btnAddEquipment');
+    if (!form || !saveBtn || !addBtn) return;
+
+    form.style.display = 'grid';
+    saveBtn.style.display = 'inline-flex';
+    addBtn.style.display = 'none';
 }
 
 async function loadEquipmentList(institutionId) {
-    const result = await apiGet(`/api/equipment/${institutionId}`);
     const list = document.getElementById('equipmentList');
+    if (!list) return;
+
+    const result = await apiGet(`/api/equipment/${institutionId}`);
     if (!result.success || result.data.length === 0) {
         list.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);font-family:Segoe UI,sans-serif">No equipment recorded yet.</p>';
         return;
@@ -396,6 +463,11 @@ async function loadEquipmentList(institutionId) {
 }
 
 async function addEquipmentItem() {
+    const form = document.getElementById('equipmentForm');
+    const saveBtn = document.getElementById('btnSaveEquipment');
+    const addBtn = document.getElementById('btnAddEquipment');
+    if (!form || !saveBtn || !addBtn) return;
+
     const result = await apiPost('/api/equipment', {
         institutionId: editId,
         equipmentType: document.getElementById('eqType').value,
@@ -407,9 +479,9 @@ async function addEquipmentItem() {
     if (result.success) {
         toast('Equipment added', 'success');
         ['eqModel','eqSerial','eqNotes'].forEach(i => document.getElementById(i).value = '');
-        document.getElementById('equipmentForm').style.display = 'none';
-        document.getElementById('btnSaveEquipment').style.display = 'none';
-        document.getElementById('btnAddEquipment').style.display = 'inline-flex';
+        form.style.display = 'none';
+        saveBtn.style.display = 'none';
+        addBtn.style.display = 'inline-flex';
         loadEquipmentList(editId);
     } else {
         toast('Error: ' + result.error, 'error');

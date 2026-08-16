@@ -66,6 +66,33 @@ async function apiUploadFile(formData) {
     }
 }
 
+async function apiImportInstitutions(formData) {
+    try {
+        const res = await fetch(`${API_URL}/api/institutions/import`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData
+        });
+        return await res.json();
+    } catch (e) {
+        return { success: false, error: e.message };
+    }
+}
+
+async function apiRunMonitor() {
+    try {
+        const res = await fetch(`${API_URL}/api/institutions/monitor`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+        return await res.json();
+    } catch (e) {
+        return { success: false, error: e.message };
+    }
+}
+
 function toast(msg, type = '') {
     const t = document.getElementById('toast');
     if (!t) return;

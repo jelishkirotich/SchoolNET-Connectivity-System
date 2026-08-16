@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SchoolNET | Dashboard</title>
+    <title>Institution Connectivity Monitoring System | Dashboard</title>
     <link rel="stylesheet" href="../static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 </head>
@@ -13,20 +13,23 @@
     <!-- SIDEBAR -->
     <aside class="sidebar">
         <div class="sidebar-header">
-            <h1>🛡️ SchoolNET</h1>
-            <p>Connectivity Monitoring</p>
+            <h1>🛡️ Institution Connectivity Monitoring</h1>
+            <p>Institution connectivity monitoring system</p>
         </div>
         <div class="sidebar-nav">
             <div class="nav-section-label">Main</div>
             <a class="nav-link active" onclick="showPage('dashboard')">📊 Dashboard</a>
+            <a class="nav-link" onclick="showPage('inventory')">💻 Inventory</a>
             <a class="nav-link" onclick="showPage('registry')">🏫 Institutions</a>
             <a class="nav-link" onclick="showPage('map')">🗺️ GIS Map</a>
             <a class="nav-link" onclick="showPage('issues')">⚠️ Issue Reports</a>
 
             <div class="nav-section-label">Analysis</div>
-            <a class="nav-link" onclick="showPage('reports')">📄 Reports</a>
+            <a class="nav-link" id="navReports" onclick="showPage('reports')" style="display:none">📄 Reports</a>
+            <a class="nav-link" id="navRoles" onclick="showPage('roles')" style="display:none">🔐 Roles & Permissions</a>
 
             <div class="nav-section-label" id="adminSectionLabel" style="display:none">Administration</div>
+            <a class="nav-link" id="navIpStatus" onclick="showPage('ipstatus')" style="display:none">🌐 IP Connectivity Status</a>
             <a class="nav-link" id="navAdmin" onclick="showPage('admin')" style="display:none">👤 User Management</a>
             <a class="nav-link" id="navAuditLog" onclick="showPage('auditlog')" style="display:none">📋 Audit Log</a>
         </div>
@@ -40,6 +43,12 @@
         <header class="topbar">
             <h2 id="pageTitle">Dashboard</h2>
             <div class="topbar-right">
+                <button id="notifBtn" class="btn" onclick="toggleNotifications()" title="Notifications">🔔 <span id="notifCount" style="font-weight:700;color:var(--accent)"></span></button>
+                <div id="notifPanel" style="display:none;position:absolute;right:22px;top:64px;width:360px;z-index:999;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px;box-shadow:0 6px 18px rgba(0,0,0,0.08)">
+                    <div style="font-weight:700;margin-bottom:6px">Recent notifications</div>
+                    <div id="notifList" style="max-height:320px;overflow:auto"></div>
+                    <div style="text-align:right;margin-top:8px"><a href="#" onclick="showPage('auditlog');toggleNotifications();return false">View all</a></div>
+                </div>
                 <span class="role-pill" id="userRolePill"></span>
                 <span id="userNameLabel"></span>
                 <div class="user-avatar" id="userAvatar">--</div>
@@ -66,6 +75,34 @@
                 </div>
             </div>
 
+            <!-- ======================== INVENTORY ======================== -->
+            <div class="page" id="page-inventory">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Institution Inventory</h3>
+                        <button id="btnAddInventory" class="btn btn-primary" onclick="openInventoryModal()">+ Add Inventory Record</button>
+                    </div>
+                    <div style="overflow-x:auto">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>School Code</th>
+                                    <th>Institution</th>
+                                    <th>Head of Institution</th>
+                                    <th>Contact</th>
+                                    <th>Serial No.</th>
+                                    <th>Delivery</th>
+                                    <th>Inspection</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventoryBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- ======================== INSTITUTIONS REGISTRY ======================== -->
             <div class="page" id="page-registry">
                 <div class="panel">
@@ -80,6 +117,7 @@
                             </select>
                             <button class="btn btn-primary" id="btnAddInstitution" onclick="openInstitutionModal()">+ Add Institution</button>
                             <button class="btn btn-outline" id="btnUploadFile" onclick="openUploadModal()">📁 Upload File</button>
+                            <button class="btn btn-outline" id="btnBulkImport" onclick="openImportModal()">📥 Import CSV</button>
                             <button class="btn btn-outline" onclick="exportCSV()">⬇ Export CSV</button>
                         </div>
                     </div>
@@ -114,7 +152,7 @@
                     <div class="panel" style="padding:20px;grid-column:1/-1">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
                             <h4 style="font-size:12px;text-transform:uppercase;color:var(--text-muted)">Reported Issues</h4>
-                            <button class="btn btn-accent btn-sm" onclick="openIssueModal()">+ Report Issue</button>
+                            <button id="btnReportIssue" class="btn btn-accent btn-sm" onclick="openIssueModal()">+ Report Issue</button>
                         </div>
                         <div id="profileIssues"></div>
                     </div>
@@ -140,6 +178,22 @@
                 <div id="mapContainer" style="height:560px;border-radius:6px;border:1px solid var(--border)"></div>
             </div>
 
+            <!-- ======================== IP CONNECTIVITY STATUS ======================== -->
+            <div class="page" id="page-ipstatus">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>IP Connectivity Status</h3>
+                        <button class="btn btn-primary" onclick="triggerAutoMonitoring()">🔄 Refresh Live Status</button>
+                    </div>
+                    <div style="overflow-x:auto">
+                        <table>
+                            <thead><tr><th>#</th><th>Institution</th><th>County</th><th>Sub-County</th><th>IP Address</th><th>Status</th><th>Last Verified</th><th>Detail</th></tr></thead>
+                            <tbody id="ipStatusTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- ======================== ISSUE REPORTS ======================== -->
             <div class="page" id="page-issues">
                 <div class="panel">
@@ -160,6 +214,50 @@
                         <thead><tr><th>County</th><th>Total</th><th>Connected</th><th>Scheduled</th><th>Not Connected</th><th>Coverage</th></tr></thead>
                         <tbody id="countyReport"></tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- ======================== ROLES & PERMISSIONS ======================== -->
+            <div class="page" id="page-roles">
+                <div class="panel">
+                    <div class="panel-header"><h3>Roles & Permissions</h3></div>
+                    <div style="padding:20px;font-family:'Segoe UI',sans-serif">
+                        <p style="margin-bottom:16px;color:var(--text-muted)">This section shows the access model for the system so you can manage who can view, report, update, and administer the platform.</p>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
+                            <div style="border:1px solid var(--border);border-radius:var(--radius);padding:14px;background:var(--bg)">
+                                <h4 style="font-size:14px;margin-bottom:8px">Viewer</h4>
+                                <ul style="padding-left:18px;line-height:1.7;font-size:13px;color:var(--text-muted)">
+                                    <li>View dashboard</li>
+                                    <li>View institutions</li>
+                                    <li>Report issues</li>
+                                </ul>
+                            </div>
+                            <div style="border:1px solid var(--border);border-radius:var(--radius);padding:14px;background:var(--bg)">
+                                <h4 style="font-size:14px;margin-bottom:8px">Field Staff</h4>
+                                <ul style="padding-left:18px;line-height:1.7;font-size:13px;color:var(--text-muted)">
+                                    <li>Work with inventory</li>
+                                    <li>Update delivery/installation records</li>
+                                    <li>Resolve issues</li>
+                                </ul>
+                            </div>
+                            <div style="border:1px solid var(--border);border-radius:var(--radius);padding:14px;background:var(--bg)">
+                                <h4 style="font-size:14px;margin-bottom:8px">Management</h4>
+                                <ul style="padding-left:18px;line-height:1.7;font-size:13px;color:var(--text-muted)">
+                                    <li>Review dashboard and reports</li>
+                                    <li>Monitor inventory and issues</li>
+                                    <li>Support operations</li>
+                                </ul>
+                            </div>
+                            <div style="border:1px solid var(--border);border-radius:var(--radius);padding:14px;background:var(--bg)">
+                                <h4 style="font-size:14px;margin-bottom:8px">Admin</h4>
+                                <ul style="padding-left:18px;line-height:1.7;font-size:13px;color:var(--text-muted)">
+                                    <li>Manage institutions</li>
+                                    <li>Manage users and roles</li>
+                                    <li>Full system control</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -198,14 +296,13 @@
             <div class="modal-tabs">
                 <button class="modal-tab active" id="instTabBasic" onclick="switchModalTab('inst', 'instTabBasic')">Basic Info</button>
                 <button class="modal-tab" id="instTabNetwork" onclick="switchModalTab('inst', 'instTabNetwork')">Network</button>
-                <button class="modal-tab" id="instTabEquipment" onclick="switchModalTab('inst', 'instTabEquipment')">Equipment</button>
             </div>
 
             <div class="tab-content active" id="inst-instTabBasic">
                 <div class="form-grid">
                     <div class="form-group full"><label>Institution Name *</label><input type="text" id="fName"></div>
                     <div class="form-group"><label>NEMIS Code *</label><input type="text" id="fNemis"></div>
-                    <div class="form-group"><label>Type</label><select id="fType"><option>PUBLIC</option><option>PRIVATE</option></select></div>
+                    <div class="form-group"><label>Type</label><select id="fType"><option>Public</option><option>Private</option><option>Government</option><option>County</option></select></div>
                     <div class="form-group"><label>County *</label>
                         <select id="fCounty">
                             <option>Turkana</option><option>West Pokot</option><option>Nandi</option>
@@ -216,7 +313,19 @@
                     <div class="form-group"><label>Constituency</label><input type="text" id="fConstituency"></div>
                     <div class="form-group"><label>Ward</label><input type="text" id="fWard"></div>
                     <div class="form-group"><label>Zone</label><input type="text" id="fZone"></div>
-                    <div class="form-group"><label>Category</label><input type="text" id="fCategory" placeholder="e.g. JSS"></div>
+                    <div class="form-group"><label>Institution Category *</label>
+                        <select id="fCategory">
+                            <option value="">-- Select Category --</option>
+                            <option>Hospital</option>
+                            <option>Government Office</option>
+                            <option>School</option>
+                            <option>University</option>
+                            <option>Police Station</option>
+                            <option>Training Center</option>
+                            <option>Clinic</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
                     <div class="form-group"><label>Project</label><input type="text" id="fProject" placeholder="e.g. DSH II"></div>
                 </div>
             </div>
@@ -233,23 +342,6 @@
                     <div class="form-group"><label>Status Detail</label><input type="text" id="fStatusDetail"></div>
                     <div class="form-group full"><label>Comments</label><textarea id="fComments" rows="2"></textarea></div>
                 </div>
-            </div>
-
-            <div class="tab-content" id="inst-instTabEquipment">
-                <div id="equipmentList" style="margin-bottom:16px"></div>
-                <div class="form-grid" id="equipmentForm" style="display:none;border-top:1px solid var(--border);padding-top:16px">
-                    <div class="form-group"><label>Equipment Type</label>
-                        <select id="eqType"><option>Switch</option><option>Access Point</option><option>Router</option><option>UPS</option><option>Transmission Link</option></select>
-                    </div>
-                    <div class="form-group"><label>Model / OEM</label><input type="text" id="eqModel"></div>
-                    <div class="form-group"><label>Serial No.</label><input type="text" id="eqSerial"></div>
-                    <div class="form-group"><label>Notes</label><input type="text" id="eqNotes"></div>
-                </div>
-                <button class="btn btn-outline btn-sm" id="btnAddEquipment" onclick="showEquipmentForm()" disabled>+ Add Equipment</button>
-                <button class="btn btn-primary btn-sm" id="btnSaveEquipment" style="display:none" onclick="addEquipmentItem()">Save Item</button>
-                <p id="equipmentHint" style="font-size:11px;color:var(--text-muted);margin-top:8px;font-family:'Segoe UI',sans-serif">
-                    Save the institution first to add equipment.
-                </p>
             </div>
 
         </div>
@@ -276,6 +368,114 @@
         <div class="modal-footer">
             <button class="btn btn-outline" onclick="closeIssueModal()">Cancel</button>
             <button class="btn btn-accent" onclick="saveIssue()">Submit Report</button>
+        </div>
+    </div>
+</div>
+
+<!-- INVENTORY MODAL -->
+<div class="modal-bg" id="inventoryModal">
+    <div class="modal">
+        <div class="modal-header"><h3 id="inventoryModalTitle">Add Inventory Record</h3><button class="modal-close" onclick="closeInventoryModal()">×</button></div>
+        <div class="modal-body">
+            <div class="inventory-section-tabs">
+                <button class="inventory-section-tab active" onclick="switchInventorySection('school')">Institution Details</button>
+                <button class="inventory-section-tab" onclick="switchInventorySection('equipment')">Equipment</button>
+                <button class="inventory-section-tab" onclick="switchInventorySection('delivery')">Delivery</button>
+                <button class="inventory-section-tab" onclick="switchInventorySection('inspection')">Inspection</button>
+            </div>
+
+            <div class="inventory-section active" id="inventory-section-school">
+                <div class="form-grid">
+                    <div class="form-group full"><label>Institution</label>
+                        <select id="inventoryInstitution"><option value="">-- Select Institution --</option></select>
+                    </div>
+                    <div class="form-group"><label>Institution Code</label><input type="text" id="inventorySchoolCode"></div>
+                    <div class="form-group"><label>Head of Institution Name</label><input type="text" id="inventoryHeadName"></div>
+                    <div class="form-group"><label>Head of Institution Contact</label><input type="text" id="inventoryHeadContact"></div>
+                    <div class="form-group"><label>ISB Serial No.</label><input type="text" id="inventorySerialNo"></div>
+                </div>
+            </div>
+
+            <div class="inventory-section" id="inventory-section-equipment">
+                <div class="form-grid">
+                    <div class="form-group"><label>Equipment Type</label>
+                        <select id="inventoryEquipmentType">
+                            <option value="">-- Select Equipment --</option>
+                            <option value="Site Switch">Site Switch</option>
+                            <option value="Access Switch">Access Switch</option>
+                            <option value="Router">Router</option>
+                            <option value="UPS">UPS</option>
+                            <option value="DWDM">DWDM</option>
+                            <option value="OSN">OSN</option>
+                            <option value="Laptop">Laptop</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Equipment Name</label><input type="text" id="inventoryEquipmentName" placeholder="e.g. Core Router"></div>
+                    <div class="form-group"><label>Model / OEM</label><input type="text" id="inventoryEquipmentModel"></div>
+                    <div class="form-group"><label>Equipment Serial No.</label><input type="text" id="inventoryEquipmentSerial"></div>
+                    <div class="form-group"><label>Quantity</label><input type="number" id="inventoryEquipmentQuantity" min="1" value="1"></div>
+                    <div class="form-group"><label>Status</label>
+                        <select id="inventoryEquipmentStatus">
+                            <option value="Pending">Pending</option>
+                            <option value="Delivered">Delivered</option>
+                            <option value="Installed">Installed</option>
+                            <option value="Faulty">Faulty</option>
+                        </select>
+                    </div>
+                    <div class="form-group full"><label>Notes</label><textarea id="inventoryEquipmentNotes" rows="3"></textarea></div>
+                </div>
+            </div>
+
+            <div class="inventory-section" id="inventory-section-delivery">
+                <div class="form-grid">
+                    <div class="form-group"><label>Delivery Status</label>
+                        <select id="inventoryDeliveryStatus">
+                            <option value="Pending">Pending</option>
+                            <option value="Delivered">Delivered</option>
+                            <option value="Not Delivered">Not Delivered</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Delivery Date</label><input type="date" id="inventoryDeliveryDate"></div>
+                </div>
+            </div>
+
+            <div class="inventory-section" id="inventory-section-inspection">
+                <div class="form-grid">
+                    <div class="form-group"><label>Inspection Status</label>
+                        <select id="inventoryInspectionStatus">
+                            <option value="Not Taken">Not Taken</option>
+                            <option value="Taken">Taken</option>
+                            <option value="Pending">Pending</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Inspection Date</label><input type="date" id="inventoryInspectionDate"></div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeInventoryModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveInventory()">Save Record</button>
+        </div>
+    </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-bg" id="importModal">
+    <div class="modal">
+        <div class="modal-header"><h3>Import Institutions CSV</h3><button class="modal-close" onclick="closeImportModal()">×</button></div>
+        <div class="modal-body">
+            <div class="form-grid">
+                <div class="form-group full"><label>Choose CSV File</label>
+                    <input type="file" id="importFileInput" accept=".csv">
+                </div>
+                <div class="form-group full">
+                    <p style="font-size:12px;color:var(--text-muted);margin:0">Expected columns: name, nemis, county, sub_county, constituency, ward, zone, type, category, project, ip_address, no_of_access_points, status, status_detail, comments</p>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeImportModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="handleBulkImport()">Import</button>
         </div>
     </div>
 </div>
@@ -311,8 +511,21 @@
                 <div class="form-group full"><label>Full Name *</label><input type="text" id="uName"></div>
                 <div class="form-group"><label>Email *</label><input type="email" id="uEmail"></div>
                 <div class="form-group"><label>Password *</label><input type="password" id="uPassword"></div>
-                <div class="form-group full"><label>Role</label>
-                    <select id="uRole"><option value="user">User</option><option value="management">Management</option><option value="admin">Admin</option></select>
+                <div class="form-group"><label>Role</label>
+                    <select id="uRole">
+                        <option value="viewer">Viewer</option>
+                        <option value="user">User</option>
+                        <option value="field">Field Staff</option>
+                        <option value="management">Management</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Status</label>
+                    <select id="uStatus">
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                        <option value="Suspended">Suspended</option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -332,6 +545,7 @@
 
 <script src="../static/js/api.js"></script>
 <script src="../static/js/app.js"></script>
+<script src="../static/js/inventory.js"></script>
 <script src="../static/js/dashboard.js"></script>
 <script src="../static/js/registry.js"></script>
 <script src="../static/js/map.js"></script>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SchoolNET | Sign In</title>
+    <title>Institution Connectivity Monitoring System | Sign In</title>
     <link rel="stylesheet" href="static/css/style.css">
 </head>
 <body>
@@ -12,19 +12,16 @@
     <div class="auth-box">
 
         <div class="auth-header">
-            <div class="crest">🛡️</div>
-            <h1>SchoolNET</h1>
-            <p>Connectivity Planning & Monitoring</p>
+            <div class="crest">ICMS</div>
+            <h1>Institution Connectivity Monitoring System</h1>
+            <p>Live connectivity monitoring for institutions</p>
         </div>
 
         <div class="auth-body">
 
             <div class="auth-tabs">
-                <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">
+                <button class="auth-tab active" id="tabLogin">
                     Sign In
-                </button>
-                <button class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">
-                    Create Account
                 </button>
             </div>
 
@@ -36,7 +33,10 @@
                 </div>   
                 <div class="auth-field">
                     <label>Password</label>
-                    <input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password">
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password">
+                        <button type="button" id="loginTogglePwd" onclick="togglePassword('loginPassword','loginTogglePwd')" class="pwd-toggle">Show</button>
+                    </div>
                 </div>
 
                 <div class="auth-error" id="loginError"></div>
@@ -45,44 +45,30 @@
                     Sign In
                 </button>
 
-                <div class="auth-divider">or</div>
+                <div style="text-align:right;margin:10px 0 8px">
+                    <a href="#" onclick="showResetPanel();return false" style="font-size:12px;color:var(--navy-deep);font-weight:600">Reset password</a>
+                </div>
 
-                <button class="btn-google" onclick="handleGoogleLogin()">
-                    <span>🔵</span> Continue with Google
-                </button>
+                <div id="resetPasswordPanel" style="display:none;margin-top:10px">
+                    <div class="auth-field">
+                        <label>Email or Username</label>
+                        <input type="text" id="resetIdentifier" placeholder="Enter your email or username">
+                    </div>
+                    <div class="auth-field">
+                        <label>New Password</label>
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <input type="password" id="resetPassword" placeholder="New password">
+                            <button type="button" id="resetTogglePwd" onclick="togglePassword('resetPassword','resetTogglePwd')" class="pwd-toggle">Show</button>
+                        </div>
+                    </div>
+                    <button class="btn-auth-primary" onclick="handlePasswordReset()">Update Password</button>
+                    <div class="auth-error" id="resetError"></div>
+                </div>
+
+                <!-- Google sign-in disabled in this deployment -->
             </div>
 
-            <!-- SIGNUP FORM -->
-            <div id="signupForm" style="display:none">
-                <div class="auth-field">
-                    <label>Full Name</label>
-                    <input type="text" id="signupName" placeholder="e.g. Jane Doe" autocomplete="name">
-                </div>
-                <div class="auth-field">
-                    <label>Email Address(optional if you set a username)</label>
-                    <input type="email" id="signupEmail" placeholder="you@example.com" autocomplete="email">
-                </div>
-                <div class="auth-field">
-                    <label>Username(optional if you provide an email)</label>
-                    <input type="text" id="signupUsername" placeholder="e.g jdoe2026" autocomplete="username">
-                </div>
-                <div class="auth-field">
-                    <label>Password</label>
-                    <input type="password" id="signupPassword" placeholder="At least 6 characters" autocomplete="new-password">
-                </div>
-
-                <div class="auth-error" id="signupError"></div>
-
-                <button class="btn-auth-primary" id="signupBtn" onclick="handleSignup()">
-                    Create Account
-                </button>
-
-                <div class="auth-divider">or</div>
-
-                <button class="btn-google" onclick="handleGoogleLogin()">
-                    <span>🔵</span> Continue with Google
-                </button>
-            </div>
+            <!-- Signup disabled. Admin will create user accounts. -->
 
         </div>
     </div>

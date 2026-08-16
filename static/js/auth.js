@@ -29,7 +29,7 @@ async function handleLogin() {
     const result = await apiPost('/api/auth/login', { identifier, password });
 
     if (result.success) {
-        window.location.href = 'templates/dashboard.html';
+        window.location.href = `${API_URL}/dashboard`;
     } else {
         errEl.textContent = result.error || 'Invalid login credentials';
         errEl.style.display = 'block';
@@ -70,7 +70,7 @@ async function handleSignup() {
     const result = await apiPost('/api/auth/signup', { name, email, username, password });
 
     if (result.success) {
-        window.location.href = 'templates/dashboard.html';
+        window.location.href = `${API_URL}/dashboard`;
     } else {
         errEl.textContent = result.error || 'Could not create account';
         errEl.style.display = 'block';
@@ -79,8 +79,49 @@ async function handleSignup() {
     }
 }
 
+function showResetPanel() {
+    document.getElementById('resetPasswordPanel').style.display = 'block';
+}
+
+async function handlePasswordReset() {
+    const identifier = document.getElementById('resetIdentifier').value.trim();
+    const newPassword = document.getElementById('resetPassword').value;
+    const errEl = document.getElementById('resetError');
+
+    errEl.style.display = 'none';
+    if (!identifier || !newPassword) {
+        errEl.textContent = 'Please enter your email/username and a new password';
+        errEl.style.display = 'block';
+        return;
+    }
+
+    const result = await apiPost('/api/auth/password/reset', { identifier, newPassword });
+    if (result.success) {
+        errEl.style.display = 'block';
+        errEl.style.background = '#E7F3EC';
+        errEl.style.color = 'var(--status-connected)';
+        errEl.textContent = result.message || 'Password updated successfully';
+    } else {
+        errEl.textContent = result.error || 'Could not reset password';
+        errEl.style.display = 'block';
+    }
+}
+
 function handleGoogleLogin() {
-    window.location.href = `${API_URL}/api/auth/google`;
+    toast('Google sign-in is disabled. Please contact the administrator to create an account.', 'error');
+}
+
+function togglePassword(fieldId, btnId) {
+    const f = document.getElementById(fieldId);
+    const b = document.getElementById(btnId);
+    if (!f) return;
+    if (f.type === 'password') {
+        f.type = 'text';
+        if (b) b.textContent = 'Hide';
+    } else {
+        f.type = 'password';
+        if (b) b.textContent = 'Show';
+    }
 }
 
 // Enter key submits whichever form is visible

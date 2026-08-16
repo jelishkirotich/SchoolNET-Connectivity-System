@@ -11,7 +11,7 @@ async function renderUsersTable() {
         return;
     }
 
-    const roleLabels = { admin: 'Admin', management: 'Management', user: 'User' };
+    const roleLabels = { admin: 'Admin', management: 'Management', field: 'Field Staff', viewer: 'Viewer', user: 'User' };
 
     document.getElementById('usersTable').innerHTML = result.data.map(u => `
         <tr>
@@ -19,12 +19,20 @@ async function renderUsersTable() {
             <td>${u.email}</td>
             <td>
                 <select onchange="changeUserRole(${u.id}, this.value)" style="font-size:12px;padding:4px 8px">
+                    <option value="viewer" ${u.role === 'viewer' ? 'selected' : ''}>Viewer</option>
                     <option value="user" ${u.role === 'user' ? 'selected' : ''}>User</option>
+                    <option value="field" ${u.role === 'field' ? 'selected' : ''}>Field Staff</option>
                     <option value="management" ${u.role === 'management' ? 'selected' : ''}>Management</option>
                     <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
                 </select>
             </td>
-            <td><span class="badge badge-${u.status === 'Active' ? 'connected' : 'unknown'}">${u.status}</span></td>
+            <td>
+                <select onchange="changeUserStatus(${u.id}, this.value)" style="font-size:12px;padding:4px 8px">
+                    <option value="Active" ${u.status === 'Active' ? 'selected' : ''}>Active</option>
+                    <option value="Inactive" ${u.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
+                    <option value="Suspended" ${u.status === 'Suspended' ? 'selected' : ''}>Suspended</option>
+                </select>
+            </td>
             <td style="font-size:12px;color:var(--text-muted)">${u.auth_provider === 'google' ? '🔵 Google' : '✉️ Email'}</td>
             <td><button class="btn btn-danger btn-sm" onclick="removeUser(${u.id})">Remove</button></td>
         </tr>
@@ -33,7 +41,8 @@ async function renderUsersTable() {
 
 function openUserModal() {
     ['uName','uEmail','uPassword'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('uRole').value = 'user';
+    document.getElementById('uRole').value = 'viewer';
+    document.getElementById('uStatus').value = 'Active';
     document.getElementById('userModal').classList.add('open');
 }
 
@@ -46,6 +55,7 @@ async function saveUser() {
     const email = document.getElementById('uEmail').value.trim();
     const password = document.getElementById('uPassword').value;
     const role = document.getElementById('uRole').value;
+    const status = document.getElementById('uStatus').value;
 
     if (!name || !email || !password) {
         toast('All fields are required', 'error');
@@ -56,7 +66,7 @@ async function saveUser() {
         return;
     }
 
-    const result = await apiPost('/api/users', { name, email, password, role });
+    const result = await apiPost('/api/users', { name, email, password, role, status });
 
     if (result.success) {
         toast('User added successfully', 'success');
@@ -71,6 +81,17 @@ async function changeUserRole(userId, newRole) {
     const result = await apiPut(`/api/users/${userId}/role`, { role: newRole });
     if (result.success) {
         toast('User role updated', 'success');
+    } else {
+        toast('Error: ' + result.error, 'error');
+        renderUsersTable();
+    }
+}
+
+async function changeUserStatus(userId, newStatus) {
+    const result = await apiPut(`/api/users/${userId}/status`, { status: newStatus });
+    if (result.success) {
+        toast('User status updated', 'success');
+        renderUsersTable();
     } else {
         toast('Error: ' + result.error, 'error');
         renderUsersTable();

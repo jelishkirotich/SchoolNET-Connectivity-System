@@ -12,7 +12,7 @@ async function initApp() {
     const result = await apiGet('/api/auth/me');
 
     if (!result.success) {
-        window.location.href = '../index.html';
+        window.location.href = '/index.html';
         return;
     }
 
@@ -30,29 +30,58 @@ async function initApp() {
 // The real enforcement happens server-side in Flask.
 // ================================
 function applyRolePermissions(role) {
-    const isAdmin = role === 'admin';
+    const permissions = CURRENT_USER && CURRENT_USER.permissions ? CURRENT_USER.permissions : {};
+    window.CURRENT_USER_PERMISSIONS = permissions;
+    const isAdmin = role === 'admin' || permissions.can_manage_users;
     const isManagement = role === 'management';
+    const isField = role === 'field';
+    const isViewer = role === 'viewer';
     const isUser = role === 'user';
 
-    // Admin-only: user management + audit log
-    document.getElementById('adminSectionLabel').style.display = isAdmin ? 'block' : 'none';
-    document.getElementById('navAdmin').style.display = isAdmin ? 'flex' : 'none';
+    const canManageInstitutions = permissions.can_manage_institutions || isAdmin || isManagement;
+    const canManageInventory = permissions.can_manage_inventory || isAdmin || isField || isManagement;
+    const canReportIssues = permissions.can_report_issue || isAdmin || isUser || isField || isManagement || isViewer;
+    const canViewReports = permissions.can_view_reports || isAdmin;
+    const canViewAudit = permissions.can_view_audit || isAdmin || isManagement;
+    const canManageUsers = permissions.can_manage_users || isAdmin;
+    const canViewRoles = permissions.can_view_roles || isAdmin || isManagement;
+    const canViewIpMonitor = permissions.can_view_ip_monitor || isAdmin;
+    const canResolveIssues = permissions.can_resolve_issues || isAdmin || isManagement || isField;
 
-    // Admin + Management can see audit log
-    document.getElementById('navAuditLog').style.display = (isAdmin || isManagement) ? 'flex' : 'none';
+    window.CURRENT_USER_CAN_RESOLVE_ISSUES = canResolveIssues;
 
-    // Add Institution + Upload File: Admin + User only (not Management - read only)
+    const showAdminLabel = canManageUsers || canViewRoles || canViewAudit || canViewIpMonitor;
+    document.getElementById('adminSectionLabel').style.display = showAdminLabel ? 'block' : 'none';
+    document.getElementById('navAdmin').style.display = canManageUsers ? 'flex' : 'none';
+    document.getElementById('navAuditLog').style.display = canViewAudit ? 'flex' : 'none';
+    document.getElementById('navIpStatus').style.display = canViewIpMonitor ? 'flex' : 'none';
+    document.getElementById('navReports').style.display = canViewReports ? 'flex' : 'none';
+    document.getElementById('navRoles').style.display = canViewRoles ? 'flex' : 'none';
+
     const btnAdd = document.getElementById('btnAddInstitution');
     const btnUpload = document.getElementById('btnUploadFile');
-    if (btnAdd) btnAdd.style.display = (isAdmin || isUser) ? 'inline-flex' : 'none';
-    if (btnUpload) btnUpload.style.display = (isAdmin || isUser) ? 'inline-flex' : 'none';
+    const btnBulkImport = document.getElementById('btnBulkImport');
+    const btnAddInventory = document.getElementById('btnAddInventory');
+    const btnReportIssue = document.getElementById('btnReportIssue');
+
+    if (btnAdd) btnAdd.style.display = canManageInstitutions ? 'inline-flex' : 'none';
+    if (btnUpload) btnUpload.style.display = canManageInstitutions ? 'inline-flex' : 'none';
+    if (btnBulkImport) btnBulkImport.style.display = canManageInstitutions ? 'inline-flex' : 'none';
+    if (btnAddInventory) btnAddInventory.style.display = canManageInventory ? 'inline-flex' : 'none';
+    if (btnReportIssue) btnReportIssue.style.display = canReportIssues ? 'inline-flex' : 'none';
+
+    const inventoryNav = document.querySelector('.nav-link[onclick="showPage(\'inventory\')"]');
+    if (inventoryNav) inventoryNav.style.display = (canManageInventory || canManageInstitutions || canViewAudit) ? 'flex' : 'none';
+
+    const issuesNav = document.querySelector('.nav-link[onclick="showPage(\'issues\')"]');
+    if (issuesNav) issuesNav.style.display = canReportIssues ? 'flex' : 'none';
 }
 
 // ================================
 // TOPBAR USER INFO
 // ================================
 function setUserInfo(user) {
-    const roleLabels = { admin: 'Admin', management: 'Management', user: 'User' };
+    const roleLabels = { admin: 'Admin', management: 'Management', field: 'Field Staff', viewer: 'Viewer', user: 'User' };
     document.getElementById('userRolePill').textContent = roleLabels[user.role] || user.role;
     document.getElementById('userNameLabel').textContent = user.name;
     document.getElementById('userAvatar').textContent = user.name.substring(0, 2).toUpperCase();
@@ -63,7 +92,7 @@ function setUserInfo(user) {
 // ================================
 async function doLogout() {
     await apiPost('/api/auth/logout', {});
-    window.location.href = '../index.html';
+    window.location.href = '/index.html';
 }
 
 // ================================
@@ -83,11 +112,14 @@ function showPage(p) {
 
     const titles = {
         dashboard: 'Dashboard',
+        inventory: 'Inventory',
         registry: 'Institutions Registry',
         profile: 'Institution Profile',
         map: 'GIS Map',
         issues: 'Connectivity Issue Reports',
+        ipstatus: 'IP Connectivity Status',
         reports: 'Reports & Analytics',
+        roles: 'Roles & Permissions',
         admin: 'User Management',
         auditlog: 'System Audit Log'
     };
@@ -95,9 +127,23 @@ function showPage(p) {
 
     if (p === 'map') setTimeout(initMap, 200);
     if (p === 'issues') renderIssuesTable();
+    if (p === 'ipstatus') renderIpStatusMonitor();
     if (p === 'reports') renderReports();
     if (p === 'admin') renderUsersTable();
     if (p === 'auditlog') renderAuditLog();
+    if (p === 'inventory') renderInventory();
+    if (p === 'registry') {
+        const statusSelect = document.getElementById('filterStatus');
+        const countySelect = document.getElementById('filterCounty');
+
+        if (statusSelect) {
+            statusSelect.value = dashboardFilter && dashboardFilter !== 'issues' ? dashboardFilter : '';
+        }
+        if (countySelect) {
+            countySelect.value = dashboardCountyFilter || '';
+        }
+        if (typeof loadRegistry === 'function') loadRegistry();
+    }
 }
 
 // ================================
@@ -119,7 +165,11 @@ function switchModalTab(prefix, tabId) {
 function getFreshnessHtml(lastVerifiedAt) {
     if (!lastVerifiedAt) return '<span class="freshness old"><span class="freshness-dot"></span>Unknown</span>';
 
-    const verified = new Date(lastVerifiedAt);
+    // Accept either ISO or MySQL-style timestamps. Normalize spaces to T for
+    // consistent Date parsing across browsers.
+    let verifiedStr = typeof lastVerifiedAt === 'string' ? lastVerifiedAt : String(lastVerifiedAt);
+    verifiedStr = verifiedStr.replace(' ', 'T');
+    const verified = new Date(verifiedStr);
     const now = new Date();
     const daysAgo = Math.floor((now - verified) / (1000 * 60 * 60 * 24));
 

@@ -64,6 +64,8 @@ async function renderIssuesTable() {
         return;
     }
 
+    const canResolve = window.CURRENT_USER_CAN_RESOLVE_ISSUES || false;
+
     document.getElementById('issuesTable').innerHTML = result.data.map(issue => {
         const severityColor = {
             Low: 'var(--status-unknown)', Medium: 'var(--status-scheduled)',
@@ -79,7 +81,7 @@ async function renderIssuesTable() {
                 <td><span class="badge badge-${issue.status === 'Resolved' ? 'connected' : 'notconnected'}">${issue.status}</span></td>
                 <td>${issue.reported_by}</td>
                 <td>${new Date(issue.created_at).toLocaleDateString()}</td>
-                <td>${issue.status === 'Open' ? `<button class="btn btn-outline btn-sm" onclick="resolveIssue(${issue.id})">Resolve</button>` : '—'}</td>
+                <td>${issue.status === 'Open' && canResolve ? `<button class="btn btn-outline btn-sm" onclick="resolveIssue(${issue.id})">Resolve</button>` : '—'}</td>
             </tr>
         `;
     }).join('');
